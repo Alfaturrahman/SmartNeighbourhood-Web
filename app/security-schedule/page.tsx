@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
@@ -132,76 +130,66 @@ export default function SecuritySchedulePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F5F5F5]">
-      <Header />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Jadwal Keamanan</h2>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Kelola jadwal petugas keamanan</p>
+        </div>
+        {getPermissions(userRole).canManageSchedule && (
+          <button onClick={openAddModal} className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
+            + Tambah Jadwal
+          </button>
+        )}
+      </div>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-[#003366]">Jadwal Keamanan</h2>
-                <p className="text-gray-600 mt-1">Kelola jadwal petugas keamanan</p>
-              </div>
-              {getPermissions(userRole).canManageSchedule && (
-                <button onClick={openAddModal} className="px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
-                  + Tambah Jadwal
-                </button>
-              )}
-            </div>
-
-            {/* Schedule Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="border-t-4 border-[#66CC66]"></div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Nama Petugas</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Shift</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Tanggal</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Jam</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Status</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {schedules.map((schedule) => (
-                      <tr key={schedule.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
-                        <td className="px-6 py-4 font-medium text-gray-900">{schedule.name}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getShiftColor(schedule.shift)}`}>
-                            {schedule.shift}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 text-sm">{schedule.date}</td>
-                        <td className="px-6 py-4 text-gray-600 text-sm font-medium">{schedule.time}</td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            ✓ {schedule.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm space-x-2">
-                          {getPermissions(userRole).canManageSchedule ? (
-                            <>
-                              <button onClick={() => openEditModal(schedule)} className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors">✏️ Edit</button>
-                              <span className="text-gray-300">•</span>
-                              <button onClick={() => handleDelete(schedule)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors">🗑️ Hapus</button>
-                            </>
-                          ) : (
-                            <span className="text-gray-400 text-xs">Hanya lihat</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </main>
+      {/* Schedule Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="border-t-4 border-[#66CC66]"></div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Nama Petugas</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Shift</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Tanggal</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Jam</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedules.map((schedule) => (
+                <tr key={schedule.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
+                  <td className="px-6 py-4 font-medium text-gray-900">{schedule.name}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getShiftColor(schedule.shift)}`}>
+                      {schedule.shift}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{schedule.date}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-medium">{schedule.time}</td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      ✓ {schedule.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm space-x-2">
+                    {getPermissions(userRole).canManageSchedule ? (
+                      <>
+                        <button onClick={() => openEditModal(schedule)} className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors">✏️ Edit</button>
+                        <span className="text-gray-300">•</span>
+                        <button onClick={() => handleDelete(schedule)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors">🗑️ Hapus</button>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Hanya lihat</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal Form */}

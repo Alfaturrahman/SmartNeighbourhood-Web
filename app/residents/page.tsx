@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
@@ -129,107 +127,97 @@ export default function ResidentsPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F5F5F5]">
-      <Header />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Manajemen Warga</h2>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Total {filteredResidents.length} warga terdaftar</p>
+        </div>
+        {getPermissions(userRole).canManageResidents && (
+          <button
+            onClick={openAddModal}
+            className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+          >
+            + Tambah Warga
+          </button>
+        )}
+      </div>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-[#003366]">Manajemen Warga</h2>
-                <p className="text-gray-600 mt-1">Total {filteredResidents.length} warga terdaftar</p>
-              </div>
-              {getPermissions(userRole).canManageResidents && (
-                <button
-                  onClick={openAddModal}
-                  className="px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
-                >
-                  + Tambah Warga
-                </button>
-              )}
-            </div>
+      {/* Search Bar */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="🔍 Cari berdasarkan nama atau alamat..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent transition-all duration-200 bg-white"
+        />
+      </div>
 
-            {/* Search Bar */}
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="🔍 Cari berdasarkan nama atau alamat..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent transition-all duration-200 bg-white"
-              />
-            </div>
+      {/* Residents Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="border-t-4 border-[#FF9500]"></div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Nama</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Email</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Telepon</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Alamat</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredResidents.map((resident) => (
+                <tr key={resident.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
+                  <td className="px-6 py-4 font-medium text-gray-900">{resident.name}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{resident.email}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{resident.phone}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{resident.address}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                      resident.status === 'aktif'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {resident.status === 'aktif' ? '✓' : '✕'} {resident.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm space-x-2">
+                    {getPermissions(userRole).canManageResidents ? (
+                      <>
+                        <button
+                          onClick={() => openEditModal(resident)}
+                          className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          onClick={() => handleDelete(resident)}
+                          className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors"
+                        >
+                          🗑️ Hapus
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 text-xs">Tidak ada akses</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-            {/* Residents Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="border-t-4 border-[#FF9500]"></div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Nama</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Email</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Telepon</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Alamat</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Status</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredResidents.map((resident) => (
-                      <tr key={resident.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
-                        <td className="px-6 py-4 font-medium text-gray-900">{resident.name}</td>
-                        <td className="px-6 py-4 text-gray-600 text-sm">{resident.email}</td>
-                        <td className="px-6 py-4 text-gray-600 text-sm">{resident.phone}</td>
-                        <td className="px-6 py-4 text-gray-600 text-sm">{resident.address}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            resident.status === 'aktif'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {resident.status === 'aktif' ? '✓' : '✕'} {resident.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm space-x-2">
-                          {getPermissions(userRole).canManageResidents ? (
-                            <>
-                              <button
-                                onClick={() => openEditModal(resident)}
-                                className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors"
-                              >
-                                ✏️ Edit
-                              </button>
-                              <span className="text-gray-300">•</span>
-                              <button
-                                onClick={() => handleDelete(resident)}
-                                className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors"
-                              >
-                                🗑️ Hapus
-                              </button>
-                            </>
-                          ) : (
-                            <span className="text-gray-400 text-xs">Tidak ada akses</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {filteredResidents.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  <p className="text-lg">Tidak ada warga ditemukan</p>
-                  <p className="text-sm mt-1">Coba ubah filter pencarian Anda</p>
-                </div>
-              )}
-            </div>
+        {filteredResidents.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            <p className="text-lg">Tidak ada warga ditemukan</p>
+            <p className="text-sm mt-1">Coba ubah filter pencarian Anda</p>
           </div>
-        </main>
+        )}
       </div>
 
       {/* Modal Form */}

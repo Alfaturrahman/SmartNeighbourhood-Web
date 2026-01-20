@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
@@ -137,28 +135,21 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F5F5F5]">
-      <Header />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Feedback & Umpan Balik</h2>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Kelola feedback dari warga komunitas</p>
+        </div>
+        {getPermissions(userRole).canSubmitFeedback && (
+          <button onClick={openAddModal} className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
+            + Berikan Feedback
+          </button>
+        )}
+      </div>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-8 max-w-4xl">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-[#003366]">Feedback & Umpan Balik</h2>
-                <p className="text-gray-600 mt-1">Kelola feedback dari warga komunitas</p>
-              </div>
-              {getPermissions(userRole).canSubmitFeedback && (
-                <button onClick={openAddModal} className="px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
-                  + Berikan Feedback
-                </button>
-              )}
-            </div>
-
-            {/* Feedback List */}
-            <div className="space-y-4">
+      {/* Feedback List */}
+      <div className="space-y-4">
               {feedbacks.map((fb) => (
                 <div key={fb.id} className="bg-white rounded-xl shadow-sm border-l-4 border-l-[#FF9500] border border-gray-200 hover:shadow-md transition-shadow p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -191,9 +182,6 @@ export default function FeedbackPage() {
                 </div>
               ))}
             </div>
-          </div>
-        </main>
-      </div>
 
       {/* Reply Modal */}
       <Modal

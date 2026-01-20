@@ -1,0 +1,42 @@
+{
+  "name": "Smart Neighborhood - Manajemen Komunitas",
+  "short_name": "Smart Neighborhood",
+  "description": "Aplikasi manajemen komunitas untuk pengelolaan warga, jadwal keamanan, feedback, dan pengumuman",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#003366",
+  "categories": ["productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Buka halaman dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Manajemen Warga",
+      "short_name": "Warga",
+      "description": "Kelola data warga",
+      "url": "/residents",
+      "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

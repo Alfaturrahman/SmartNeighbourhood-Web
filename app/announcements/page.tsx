@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
@@ -202,62 +200,52 @@ export default function AnnouncementsPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F5F5F5]">
-      <Header />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Pengumuman</h2>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Berbagi informasi penting dengan seluruh warga</p>
+        </div>
+        {getPermissions(userRole).canManageAnnouncements && (
+          <button onClick={openAddModal} className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
+            + Buat Pengumuman
+          </button>
+        )}
+      </div>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-8 max-w-4xl">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold text-[#003366]">Pengumuman</h2>
-                <p className="text-gray-600 mt-1">Berbagi informasi penting dengan seluruh warga</p>
-              </div>
-              {getPermissions(userRole).canManageAnnouncements && (
-                <button onClick={openAddModal} className="px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
-                  + Buat Pengumuman
-                </button>
-              )}
-            </div>
-
-            {/* Announcements List */}
-            <div className="space-y-4">
-              {announcements.map((ann) => (
-                <div key={ann.id} className={`rounded-xl border-l-4 shadow-sm hover:shadow-md transition-shadow p-6 border ${getPriorityBorderColor(ann.priority)} ${getPriorityColor(ann.priority)}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-4 flex-1">
-                      <span className="text-2xl">{getPriorityIcon(ann.priority)}</span>
-                      <div>
-                        <h3 className="text-lg font-semibold text-[#003366]">{ann.title}</h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          <p className="text-sm text-gray-600">📝 {ann.author}</p>
-                          <span className="text-gray-300">•</span>
-                          <p className="text-sm text-gray-600">📅 {ann.date}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-700 mb-4 leading-relaxed ml-10">{ann.content}</p>
-                  
-                  <div className="flex gap-2 pt-4 border-t border-gray-300/50 ml-10">
-                    <button onClick={() => openDetailModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">📖 Baca Selengkapnya</button>
-                    {getPermissions(userRole).canManageAnnouncements && (
-                      <>
-                        <span className="text-gray-300">•</span>
-                        <button onClick={() => openEditModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">✏️ Edit</button>
-                        <span className="text-gray-300">•</span>
-                        <button onClick={() => handleDelete(ann)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-sm transition-colors">🗑️ Hapus</button>
-                      </>
-                    )}
+      {/* Announcements List */}
+      <div className="space-y-4">
+        {announcements.map((ann) => (
+          <div key={ann.id} className={`rounded-xl border-l-4 shadow-sm hover:shadow-md transition-shadow p-6 border ${getPriorityBorderColor(ann.priority)} ${getPriorityColor(ann.priority)}`}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start gap-4 flex-1">
+                <span className="text-2xl">{getPriorityIcon(ann.priority)}</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-[#003366]">{ann.title}</h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-sm text-gray-600">📝 {ann.author}</p>
+                    <span className="text-gray-300">•</span>
+                    <p className="text-sm text-gray-600">📅 {ann.date}</p>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+            
+            <p className="text-gray-700 mb-4 leading-relaxed ml-10">{ann.content}</p>
+            
+            <div className="flex gap-2 pt-4 border-t border-gray-300/50 ml-10">
+              <button onClick={() => openDetailModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">📖 Baca Selengkapnya</button>
+              {getPermissions(userRole).canManageAnnouncements && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <button onClick={() => openEditModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">✏️ Edit</button>
+                  <span className="text-gray-300">•</span>
+                  <button onClick={() => handleDelete(ann)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-sm transition-colors">🗑️ Hapus</button>
+                </>
+              )}
             </div>
           </div>
-        </main>
+        ))}
       </div>
 
       {/* Modal Form */}

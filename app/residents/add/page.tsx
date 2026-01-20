@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 
 export default function AddResidentPage() {
   const [formData, setFormData] = useState({
@@ -37,29 +35,22 @@ export default function AddResidentPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <Header />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="p-8 max-w-3xl mx-auto">
+      <div className="mb-8">
+        <Link href="/residents" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 font-medium text-sm">
+          ← Kembali ke Daftar Warga
+        </Link>
+        <h2 className="text-3xl font-bold text-gray-900">Tambah Warga Baru</h2>
+        <p className="text-gray-600 mt-1">Isikan data warga untuk menambahkan ke sistem</p>
+      </div>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-8 max-w-3xl">
-            <div className="mb-8">
-              <Link href="/residents" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 font-medium text-sm">
-                ← Kembali ke Daftar Warga
-              </Link>
-              <h2 className="text-3xl font-bold text-gray-900">Tambah Warga Baru</h2>
-              <p className="text-gray-600 mt-1">Isikan data warga untuk menambahkan ke sistem</p>
-            </div>
+      {success && (
+        <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg font-medium animate-pulse">
+          {success}
+        </div>
+      )}
 
-            {success && (
-              <div className="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg font-medium animate-pulse">
-                {success}
-              </div>
-            )}
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Name Input */}
@@ -170,8 +161,5 @@ export default function AddResidentPage() {
               </form>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+        );
+      }

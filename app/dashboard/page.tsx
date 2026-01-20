@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
@@ -111,92 +109,83 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#F5F5F5]">
-      <Header />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      {/* Welcome Section */}
+      <div className="mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#003366] mb-1">Dashboard</h2>
+        <p className="text-gray-600 text-sm md:text-base">Selamat datang, {user?.email}</p>
+      </div>
 
-        <main className="flex-1 overflow-auto">
-          <div className="p-8">
-            {/* Welcome Section */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-[#003366] mb-1">Dashboard</h2>
-              <p className="text-gray-600">Selamat datang, {user?.email}</p>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                  <div className={`bg-gradient-to-r ${stat.color} h-1`}></div>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-3xl">{stat.icon}</span>
-                      <p className="text-sm text-gray-600">{stat.label}</p>
-                    </div>
-                    <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Residents Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="border-t-4 border-[#66CC66]"></div>
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-bold text-[#003366]">Daftar Warga Terbaru</h3>
-                {getPermissions(userRole).canManageResidents && (
-                  <button
-                    onClick={openAddModal}
-                    className="px-4 py-2 bg-[#FF9500] hover:bg-[#FF8C00] text-white text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
-                  >
-                    + Tambah Warga
-                  </button>
-                )}
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+        {stats.map((stat, idx) => (
+          <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
+            <div className={`bg-gradient-to-r ${stat.color} h-1`}></div>
+            <div className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-2xl md:text-3xl">{stat.icon}</span>
+                <p className="text-xs md:text-sm text-gray-600">{stat.label}</p>
               </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Nama</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Alamat</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Telepon</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {residents.slice(0, 5).map((resident) => (
-                      <tr key={resident.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-900">{resident.name}</p>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 text-sm">{resident.address}</td>
-                        <td className="px-6 py-4 text-gray-600 text-sm">{resident.phone}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            resident.status === 'aktif'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {resident.status === 'aktif' ? '✓' : '✕'} {resident.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="px-6 py-4 border-t border-gray-200 text-center">
-                <a href="/residents" className="text-sm font-medium text-[#003366] hover:text-[#004d80] transition-colors">
-                  Lihat semua warga →
-                </a>
-              </div>
+              <p className="text-3xl md:text-4xl font-bold text-gray-900">{stat.value}</p>
             </div>
           </div>
-        </main>
+        ))}
+      </div>
+
+      {/* Residents Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="border-t-4 border-[#66CC66]"></div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-4 border-b border-gray-200 gap-4">
+          <h3 className="text-lg font-bold text-[#003366]">Daftar Warga Terbaru</h3>
+          {getPermissions(userRole).canManageResidents && (
+            <button
+              onClick={openAddModal}
+              className="w-full md:w-auto px-4 py-2 bg-[#FF9500] hover:bg-[#FF8C00] text-white text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+            >
+              + Tambah Warga
+            </button>
+          )}
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm md:text-base">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366]">Nama</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366] hidden md:table-cell">Alamat</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366] hidden md:table-cell">Telepon</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366]">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {residents.slice(0, 5).map((resident) => (
+                <tr key={resident.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-3 md:px-6 py-3 md:py-4">
+                    <p className="font-medium text-gray-900 text-sm md:text-base">{resident.name}</p>
+                    <p className="text-xs text-gray-500 md:hidden">{resident.address}</p>
+                  </td>
+                  <td className="px-3 md:px-6 py-3 md:py-4 text-gray-600 text-sm hidden md:table-cell">{resident.address}</td>
+                  <td className="px-3 md:px-6 py-3 md:py-4 text-gray-600 text-sm hidden md:table-cell">{resident.phone}</td>
+                  <td className="px-3 md:px-6 py-3 md:py-4">
+                    <span className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs font-medium ${
+                      resident.status === 'aktif'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {resident.status === 'aktif' ? '✓' : '✕'} {resident.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="px-4 md:px-6 py-4 border-t border-gray-200 text-center">
+          <a href="/residents" className="text-sm font-medium text-[#003366] hover:text-[#004d80] transition-colors">
+            Lihat semua warga →
+          </a>
+        </div>
       </div>
 
       {/* Modal Form */}
