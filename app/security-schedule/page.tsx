@@ -5,14 +5,7 @@ import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
-
-const DUMMY_SCHEDULE = [
-  { id: 1, name: 'Budi Santoso', shift: 'Pagi', date: '2024-01-20', time: '06:00 - 12:00', status: 'aktif' },
-  { id: 2, name: 'Ahmad Wijaya', shift: 'Siang', date: '2024-01-20', time: '12:00 - 18:00', status: 'aktif' },
-  { id: 3, name: 'Riyanto', shift: 'Malam', date: '2024-01-20', time: '18:00 - 06:00', status: 'aktif' },
-  { id: 4, name: 'Budi Santoso', shift: 'Pagi', date: '2024-01-21', time: '06:00 - 12:00', status: 'aktif' },
-  { id: 5, name: 'Ahmad Wijaya', shift: 'Siang', date: '2024-01-21', time: '12:00 - 18:00', status: 'aktif' },
-];
+import { securityScheduleService } from '@/services/modules/securityScheduleService';
 
 export default function SecuritySchedulePage() {
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -44,8 +37,22 @@ export default function SecuritySchedulePage() {
       return;
     }
     
-    setSchedules(DUMMY_SCHEDULE);
+    fetchSchedules();
   }, [router]);
+
+  const fetchSchedules = async () => {
+    try {
+      setIsLoading(true);
+      const response = await securityScheduleService.getAll();
+      setSchedules(response.results || response || []);
+    } catch (error: any) {
+      console.error('Error fetching schedules:', error);
+      await showErrorAlert('Error', 'Gagal memuat data jadwal keamanan');
+      setSchedules([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getShiftColor = (shift: string) => {
     switch(shift) {

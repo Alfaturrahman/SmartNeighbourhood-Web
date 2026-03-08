@@ -1,4 +1,6 @@
 import { useRouter } from 'next/navigation';
+import { tokenManager } from '@/lib/tokenManager';
+import Swal from 'sweetalert2';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -8,9 +10,32 @@ interface HeaderProps {
 export default function Header({ onMenuClick, sidebarOpen }: HeaderProps) {
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    router.push('/login');
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: 'Logout',
+      text: 'Apakah Anda yakin ingin keluar?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#6B7280',
+      confirmButtonText: 'Ya, Keluar',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      // Clear all auth data using tokenManager
+      tokenManager.clearAuth();
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Logout Berhasil',
+        text: 'Anda telah keluar dari sistem',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      
+      router.push('/login');
+    }
   };
 
   return (

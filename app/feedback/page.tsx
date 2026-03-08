@@ -5,13 +5,7 @@ import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
-
-const DUMMY_FEEDBACK = [
-  { id: 1, author: 'Budi Santoso', title: 'Sistem air mati berkali-kali', content: 'Kami mengalami pemadaman air yang sangat sering, mohon perhatian dari RT.', date: '2024-01-19', rating: 2 },
-  { id: 2, author: 'Siti Nurhaliza', title: 'Jalan depan berlubang', content: 'Jalan gang A sudah berlubang besar, berbahaya untuk kendaraan.', date: '2024-01-18', rating: 2 },
-  { id: 3, author: 'Ahmad Wijaya', title: 'Lamppu jalan di depan rumah rusak', content: 'Lampu jalan nomor 5 sudah mati selama 2 minggu.', date: '2024-01-17', rating: 3 },
-  { id: 4, author: 'Dwi Retno', title: 'Kebersihan area parkir kurang', content: 'Area parkir komunal perlu dibersihkan lebih sering.', date: '2024-01-16', rating: 3 },
-];
+import { feedbackService } from '@/services/modules/feedbackService';
 
 export default function FeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
@@ -43,8 +37,22 @@ export default function FeedbackPage() {
       return;
     }
     
-    setFeedbacks(DUMMY_FEEDBACK);
+    fetchFeedbacks();
   }, [router]);
+
+  const fetchFeedbacks = async () => {
+    try {
+      setIsLoading(true);
+      const response = await feedbackService.getAll();
+      setFeedbacks(response.results || response || []);
+    } catch (error: any) {
+      console.error('Error fetching feedbacks:', error);
+      await showErrorAlert('Error', 'Gagal memuat data feedback');
+      setFeedbacks([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const renderStars = (rating: number) => {
     return (
@@ -72,20 +80,17 @@ export default function FeedbackPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(async () => {
-      const newFeedback = {
-        id: Math.max(...feedbacks.map(f => f.id), 0) + 1,
-        author: 'Anda',
-        title: formData.title,
-        content: formData.content,
-        rating: formData.rating,
-        date: new Date().toISOString().split('T')[0],
-      };
-      setFeedbacks([newFeedback, ...feedbacks]);
-      setIsLoading(false);
-      setModalOpen(false);
+    try {
+      await feedbackService.create(formData);
       await showSuccessAlert('Berhasil!', 'Feedback Anda telah dikirim');
-    }, 600);
+      setModalOpen(false);
+      fetchFeedbacks();
+    } catch (error: any) {
+      console.error('Error submitting feedback:', error);
+      await showErrorAlert('Error', error.response?.data?.error || 'Gagal mengirim feedback');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const openReplyModal = (feedback: any) => {

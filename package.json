@@ -1,12 +1,20 @@
 {
   "name": "smartneighbour",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "Aplikasi manajemen komunitas untuk pengelolaan warga, jadwal keamanan, feedback, dan pengumuman",
+  "author": "Smart Neighborhood Team",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "rm -rf .next node_modules",
+    "reinstall": "npm run clean && npm install"
   },
   "dependencies": {
     "axios": "^1.13.2",

@@ -5,14 +5,7 @@ import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
-
-const DUMMY_RESIDENTS = [
-  { id: 1, name: 'Budi Santoso', address: 'Jl. Mawar No. 10', phone: '08123456789', email: 'budi@contoh.com', status: 'aktif' },
-  { id: 2, name: 'Siti Nurhaliza', address: 'Jl. Melati No. 15', phone: '08234567890', email: 'siti@contoh.com', status: 'aktif' },
-  { id: 3, name: 'Ahmad Wijaya', address: 'Jl. Bunga No. 20', phone: '08345678901', email: 'ahmad@contoh.com', status: 'aktif' },
-  { id: 4, name: 'Dwi Retno', address: 'Jl. Anggrek No. 25', phone: '08456789012', email: 'dwi@contoh.com', status: 'tidak aktif' },
-  { id: 5, name: 'Riyanto', address: 'Jl. Tulip No. 30', phone: '08567890123', email: 'riyanto@contoh.com', status: 'aktif' },
-];
+import { residentService } from '@/services/modules/residentService';
 
 export default function DashboardPage() {
   const [residents, setResidents] = useState<any[]>([]);
@@ -39,8 +32,22 @@ export default function DashboardPage() {
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
     setUserRole(parsedUser.role);
-    setResidents(DUMMY_RESIDENTS);
+    fetchResidents();
   }, [router]);
+
+  const fetchResidents = async () => {
+    try {
+      setIsLoading(true);
+      const response = await residentService.getAll();
+      setResidents(response.results || response || []);
+    } catch (error: any) {
+      console.error('Error fetching residents:', error);
+      await showErrorAlert('Error', 'Gagal memuat data warga');
+      setResidents([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const stats = [
     { label: 'Total Warga', value: residents.length, icon: '👥', color: 'from-blue-500 to-blue-600' },
@@ -86,26 +93,22 @@ export default function DashboardPage() {
     
     setIsLoading(true);
 
-    setTimeout(async () => {
+    try {
       if (editingId) {
-        const updatedResidents = residents.map(r =>
-          r.id === editingId ? { ...r, ...formData } : r
-        );
-        setResidents(updatedResidents);
-        setIsLoading(false);
-        setModalOpen(false);
+        await residentService.update(editingId, formData);
         await showSuccessAlert('Berhasil!', 'Data warga berhasil diperbarui');
       } else {
-        const newResident = {
-          id: Math.max(...residents.map(r => r.id)) + 1,
-          ...formData,
-        };
-        setResidents([...residents, newResident]);
-        setIsLoading(false);
-        setModalOpen(false);
+        await residentService.create(formData);
         await showSuccessAlert('Berhasil!', 'Warga baru berhasil ditambahkan');
       }
-    }, 600);
+      setModalOpen(false);
+      fetchResidents();
+    } catch (error: any) {
+      console.error('Error saving resident:', error);
+      await showErrorAlert('Error', error.response?.data?.error || 'Gagal menyimpan data warga');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

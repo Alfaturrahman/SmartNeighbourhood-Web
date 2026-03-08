@@ -2,23 +2,67 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authService } from '@/services/modules/authService';
+import { tokenManager } from '@/lib/tokenManager';
+import Swal from 'sweetalert2';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('resident');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    setTimeout(() => {
-      localStorage.setItem('user', JSON.stringify({ email, role }));
+    setError('');
+
+    try {
+      console.log('Attempting login with:', { email, password: '***' });
+      const response = await authService.login(email, password);
+      console.log('Login response:', response);
+      
+      // Backend mengembalikan: { access, refresh, user, message }
+      if (response.access && response.user) {
+        // Simpan token dan user data menggunakan tokenManager
+        tokenManager.setTokens(response.access, response.refresh);
+        tokenManager.setUser(response.user);
+        
+        // Redirect to dashboard
+        await Swal.fire({
+          icon: 'success',
+          title: 'Login Berhasil!',
+          text: response.message || 'Selamat datang kembali',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        
+        router.push('/dashboard');
+      } else {
+        throw new Error('Response tidak valid dari server');
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      console.error('Error response:', err.response);
+      console.error('Error data:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      const errorMessage = err.response?.data?.error 
+        || err.response?.data?.detail 
+        || err.message 
+        || 'Terjadi kesalahan saat login';
+      
+      setError(errorMessage);
+      
+      await Swal.fire({
+        icon: 'error',
+        title: 'Login Gagal',
+        text: errorMessage,
+      });
+    } finally {
       setIsLoading(false);
-      router.push('/dashboard');
-    }, 600);
+    }
   };
 
   return (
@@ -41,6 +85,13 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             {/* Email Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -52,7 +103,8 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#003366] focus:bg-white transition-all duration-200"
+                disabled={isLoading}
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#003366] focus:bg-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -67,24 +119,10 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#003366] focus:bg-white transition-all duration-200"
+                minLength={6}
+                disabled={isLoading}
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#003366] focus:bg-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               />
-            </div>
-
-            {/* Role Select */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#003366] focus:bg-white transition-all duration-200"
-              >
-                <option value="resident">👤 Warga</option>
-                <option value="security">🔐 Keamanan</option>
-                <option value="admin">👨‍💼 RT/RW</option>
-              </select>
             </div>
 
             {/* Login Button */}
@@ -104,10 +142,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Info */}
+          {/* Help Text */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-600 text-center">
-              <span className="font-semibold">Demo:</span> Gunakan email dan password apapun
+              Belum punya akun? Hubungi administrator untuk registrasi
             </p>
           </div>
         </div>

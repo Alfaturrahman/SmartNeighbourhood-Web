@@ -5,41 +5,7 @@ import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
-
-const DUMMY_ANNOUNCEMENTS = [
-  { 
-    id: 1, 
-    title: 'Pengumuman Pemeliharaan Jalan', 
-    content: 'Pemeliharaan jalan akan dilakukan pada tanggal 22-23 Januari 2024. Mohon pengertian atas ketidaknyamanan yang ditimbulkan.',
-    author: 'RT 01',
-    date: '2024-01-19',
-    priority: 'high'
-  },
-  { 
-    id: 2, 
-    title: 'Penerimaan Iuran Bulanan', 
-    content: 'Pengumpulan iuran bulanan untuk bulan Januari dibuka hingga tanggal 25 Januari. Silakan hubungi ketua RT untuk pembayaran.',
-    author: 'RW 02',
-    date: '2024-01-18',
-    priority: 'medium'
-  },
-  { 
-    id: 3, 
-    title: 'Arisan Bulanan Komunitas', 
-    content: 'Undian arisan bulanan akan dilaksanakan hari Minggu, 21 Januari 2024 di balai warga.',
-    author: 'RT 01',
-    date: '2024-01-17',
-    priority: 'low'
-  },
-  { 
-    id: 4, 
-    title: 'Pembersihan Lingkungan Bersama', 
-    content: 'Jadwal pembersihan lingkungan bersama akan dilakukan setiap hari Minggu pukul 07:00 pagi. Partisipasi diharapkan dari semua warga.',
-    author: 'RT 01',
-    date: '2024-01-16',
-    priority: 'medium'
-  },
-];
+import { announcementService } from '@/services/modules/announcementService';
 
 export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -73,8 +39,22 @@ export default function AnnouncementsPage() {
       return;
     }
     
-    setAnnouncements(DUMMY_ANNOUNCEMENTS);
+    fetchAnnouncements();
   }, [router]);
+
+  const fetchAnnouncements = async () => {
+    try {
+      setIsLoading(true);
+      const response = await announcementService.getAll();
+      setAnnouncements(response.results || response || []);
+    } catch (error: any) {
+      console.error('Error fetching announcements:', error);
+      await showErrorAlert('Error', 'Gagal memuat data pengumuman');
+      setAnnouncements([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {

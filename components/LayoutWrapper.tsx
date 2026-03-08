@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { tokenManager } from '@/lib/tokenManager';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
@@ -21,9 +22,9 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
 
   useEffect(() => {
     setIsMounted(true);
+    
     // Check if user is logged in on mount and pathname change
-    const userData = localStorage.getItem('user');
-    const logged = !!userData;
+    const logged = tokenManager.isAuthenticated();
     setIsLoggedIn(logged);
 
     // If not logged in dan bukan di login page, redirect to login
