@@ -6,6 +6,7 @@ import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
 import { announcementService } from '@/services/modules/announcementService';
+import type { Announcement } from '@/types';
 
 export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -46,7 +47,8 @@ export default function AnnouncementsPage() {
     try {
       setIsLoading(true);
       const response = await announcementService.getAll();
-      setAnnouncements(response.results || response || []);
+      const data = (response.results || response.data || []) as Announcement[];
+      setAnnouncements(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching announcements:', error);
       await showErrorAlert('Error', 'Gagal memuat data pengumuman');

@@ -6,6 +6,7 @@ import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
 import { securityScheduleService } from '@/services/modules/securityScheduleService';
+import type { SecuritySchedule, SecurityScheduleFormData } from '@/types';
 
 export default function SecuritySchedulePage() {
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export default function SecuritySchedulePage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('resident');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SecurityScheduleFormData>({
     name: '',
     shift: 'Pagi',
     date: '',
@@ -44,7 +45,8 @@ export default function SecuritySchedulePage() {
     try {
       setIsLoading(true);
       const response = await securityScheduleService.getAll();
-      setSchedules(response.results || response || []);
+      const data = (response.results || response.data || []) as SecuritySchedule[];
+      setSchedules(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching schedules:', error);
       await showErrorAlert('Error', 'Gagal memuat data jadwal keamanan');
@@ -228,7 +230,7 @@ export default function SecuritySchedulePage() {
               </label>
               <select
                 value={formData.shift}
-                onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, shift: e.target.value as 'Pagi' | 'Siang' | 'Malam' })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               >
                 <option value="Pagi">🌅 Pagi (06:00 - 12:00)</option>
@@ -256,7 +258,7 @@ export default function SecuritySchedulePage() {
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'aktif' | 'tidak aktif' })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               >
                 <option value="aktif">✓ Aktif</option>

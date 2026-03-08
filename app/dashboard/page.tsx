@@ -6,6 +6,7 @@ import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
 import { residentService } from '@/services/modules/residentService';
+import type { Resident, ResidentFormData } from '@/types';
 
 export default function DashboardPage() {
   const [residents, setResidents] = useState<any[]>([]);
@@ -14,7 +15,7 @@ export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ResidentFormData>({
     name: '',
     address: '',
     phone: '',
@@ -39,7 +40,8 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       const response = await residentService.getAll();
-      setResidents(response.results || response || []);
+      const data = (response.results || response.data || []) as Resident[];
+      setResidents(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching residents:', error);
       await showErrorAlert('Error', 'Gagal memuat data warga');
@@ -248,7 +250,7 @@ export default function DashboardPage() {
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'aktif' | 'tidak aktif' })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               >
                 <option value="aktif">✓ Aktif</option>

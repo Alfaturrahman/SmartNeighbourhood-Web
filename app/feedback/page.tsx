@@ -6,6 +6,7 @@ import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
 import { feedbackService } from '@/services/modules/feedbackService';
+import type { Feedback } from '@/types';
 
 export default function FeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
@@ -44,7 +45,8 @@ export default function FeedbackPage() {
     try {
       setIsLoading(true);
       const response = await feedbackService.getAll();
-      setFeedbacks(response.results || response || []);
+      const data = (response.results || response.data || []) as Feedback[];
+      setFeedbacks(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching feedbacks:', error);
       await showErrorAlert('Error', 'Gagal memuat data feedback');

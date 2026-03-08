@@ -102,6 +102,11 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
+  // Django REST Framework pagination fields
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+  results?: T;
 }
 
 export interface ApiError {
