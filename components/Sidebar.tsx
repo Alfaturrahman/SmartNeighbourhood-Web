@@ -15,11 +15,13 @@ interface SidebarProps {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: '🏠', roles: ['admin', 'security', 'resident'] },
-  { href: '/residents', label: 'Manajemen Warga', icon: '👥', roles: ['admin'] },
-  { href: '/security-schedule', label: 'Jadwal Keamanan', icon: '🔐', roles: ['admin', 'security'] },
-  { href: '/feedback', label: 'Feedback', icon: '💬', roles: ['admin', 'resident'] },
-  { href: '/announcements', label: 'Pengumuman', icon: '📢', roles: ['admin', 'security', 'resident'] },
+  { href: '/dashboard', label: 'Dashboard', icon: '🏠', roles: ['rw', 'rt', 'warga'] },
+  { href: '/rt-management', label: 'Manajemen RT', icon: '👔', roles: ['rw'] },
+  { href: '/warga-management', label: 'Manajemen Warga', icon: '👥', roles: ['rt'] },
+  { href: '/residents', label: 'Data Warga', icon: '👨‍👩‍👧‍👦', roles: ['rw', 'rt', 'warga'] },
+  { href: '/security-schedule', label: 'Jadwal Keamanan', icon: '🔐', roles: ['rw'] },
+  { href: '/feedback', label: 'Feedback', icon: '💬', roles: ['rw', 'rt', 'warga'] },
+  { href: '/announcements', label: 'Pengumuman', icon: '📢', roles: ['rw', 'rt', 'warga'] },
 ];
 
 export default function Sidebar({ onClose }: SidebarProps) {
@@ -30,7 +32,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
     const userData = localStorage.getItem('user');
     if (userData) {
       const user = JSON.parse(userData);
-      setUserRole(user.role || 'resident');
+      setUserRole(user.role || 'warga');
     }
   }, []);
 

@@ -20,6 +20,7 @@ export default function AnnouncementsPage() {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
+    author: '',
     priority: 'medium',
   });
   const router = useRouter();
@@ -101,24 +102,25 @@ export default function AnnouncementsPage() {
   const openAddModal = () => {
     const permissions = getPermissions(userRole);
     if (!permissions.canManageAnnouncements) {
-      showErrorAlert('Akses Ditolak', 'Hanya admin yang dapat membuat pengumuman');
+      showErrorAlert('Akses Ditolak', 'Anda tidak dapat membuat pengumuman');
       return;
     }
     setEditingId(null);
-    setFormData({ title: '', content: '', priority: 'medium' });
+    setFormData({ title: '', content: '', author: user?.name || '', priority: 'medium' });
     setModalOpen(true);
   };
 
   const openEditModal = (announcement: any) => {
     const permissions = getPermissions(userRole);
     if (!permissions.canManageAnnouncements) {
-      showErrorAlert('Akses Ditolak', 'Hanya admin yang dapat mengedit pengumuman');
+      showErrorAlert('Akses Ditolak', 'Anda tidak dapat mengedit pengumuman');
       return;
     }
     setEditingId(announcement.id);
     setFormData({
       title: announcement.title,
       content: announcement.content,
+      author: announcement.author || user?.name || '',
       priority: announcement.priority,
     });
     setModalOpen(true);
@@ -134,28 +136,22 @@ export default function AnnouncementsPage() {
     
     setIsLoading(true);
 
-    setTimeout(async () => {
+    try {
       if (editingId) {
-        const updatedAnnouncements = announcements.map(a =>
-          a.id === editingId ? { ...a, ...formData, date: new Date().toISOString().split('T')[0] } : a
-        );
-        setAnnouncements(updatedAnnouncements);
-        setIsLoading(false);
-        setModalOpen(false);
+        await announcementService.update(editingId, formData);
         await showSuccessAlert('Berhasil!', 'Pengumuman berhasil diperbarui');
       } else {
-        const newAnnouncement = {
-          id: Math.max(...announcements.map(a => a.id), 0) + 1,
-          ...formData,
-          author: user?.email?.split('@')[0] || 'Admin',
-          date: new Date().toISOString().split('T')[0],
-        };
-        setAnnouncements([newAnnouncement, ...announcements]);
-        setIsLoading(false);
-        setModalOpen(false);
+        await announcementService.create(formData);
         await showSuccessAlert('Berhasil!', 'Pengumuman baru berhasil dibuat');
       }
-    }, 600);
+      setModalOpen(false);
+      fetchAnnouncements();
+    } catch (error: any) {
+      console.error('Error saving announcement:', error);
+      await showErrorAlert('Error', error.response?.data?.error || 'Gagal menyimpan pengumuman');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async (announcement: any) => {
@@ -173,11 +169,16 @@ export default function AnnouncementsPage() {
 
     if (result.isConfirmed) {
       setIsLoading(true);
-      setTimeout(() => {
-        setAnnouncements(announcements.filter(a => a.id !== announcement.id));
+      try {
+        await announcementService.delete(announcement.id);
+        await showSuccessAlert('Berhasil!', 'Pengumuman telah dihapus');
+        fetchAnnouncements();
+      } catch (error: any) {
+        console.error('Error deleting announcement:', error);
+        await showErrorAlert('Error', error.response?.data?.error || 'Gagal menghapus pengumuman');
+      } finally {
         setIsLoading(false);
-        showSuccessAlert('Berhasil!', 'Pengumuman telah dihapus');
-      }, 600);
+      }
     }
   };
 
@@ -188,7 +189,7 @@ export default function AnnouncementsPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Pengumuman</h2>
           <p className="text-gray-600 mt-1 text-sm md:text-base">Berbagi informasi penting dengan seluruh warga</p>
         </div>
-        {getPermissions(userRole).canManageAnnouncements && (
+        {isMounted && userRole !== 'warga' && (
           <button onClick={openAddModal} className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
             + Buat Pengumuman
           </button>
@@ -217,7 +218,7 @@ export default function AnnouncementsPage() {
             
             <div className="flex gap-2 pt-4 border-t border-gray-300/50 ml-10">
               <button onClick={() => openDetailModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">📖 Baca Selengkapnya</button>
-              {getPermissions(userRole).canManageAnnouncements && (
+              {isMounted && userRole !== 'warga' && (
                 <>
                   <span className="text-gray-300">•</span>
                   <button onClick={() => openEditModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">✏️ Edit</button>
@@ -247,6 +248,20 @@ export default function AnnouncementsPage() {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Contoh: Pengumuman Pemeliharaan Jalan"
+              required
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Nama Pembuat *
+            </label>
+            <input
+              type="text"
+              value={formData.author}
+              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+              placeholder="Nama Anda"
               required
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
             />

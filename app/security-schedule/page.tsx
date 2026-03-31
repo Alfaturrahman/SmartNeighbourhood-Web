@@ -93,26 +93,22 @@ export default function SecuritySchedulePage() {
     
     setIsLoading(true);
 
-    setTimeout(async () => {
+    try {
       if (editingId) {
-        const updatedSchedules = schedules.map(s =>
-          s.id === editingId ? { ...s, ...formData } : s
-        );
-        setSchedules(updatedSchedules);
-        setIsLoading(false);
-        setModalOpen(false);
+        await securityScheduleService.update(editingId, formData);
         await showSuccessAlert('Berhasil!', 'Jadwal keamanan berhasil diperbarui');
       } else {
-        const newSchedule = {
-          id: Math.max(...schedules.map(s => s.id), 0) + 1,
-          ...formData,
-        };
-        setSchedules([...schedules, newSchedule]);
-        setIsLoading(false);
-        setModalOpen(false);
+        await securityScheduleService.create(formData);
         await showSuccessAlert('Berhasil!', 'Jadwal keamanan baru berhasil ditambahkan');
       }
-    }, 600);
+      setModalOpen(false);
+      fetchSchedules();
+    } catch (error: any) {
+      console.error('Error saving schedule:', error);
+      await showErrorAlert('Error', error.response?.data?.error || 'Gagal menyimpan jadwal keamanan');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async (schedule: any) => {
@@ -130,11 +126,16 @@ export default function SecuritySchedulePage() {
 
     if (result.isConfirmed) {
       setIsLoading(true);
-      setTimeout(() => {
-        setSchedules(schedules.filter(s => s.id !== schedule.id));
+      try {
+        await securityScheduleService.delete(schedule.id);
+        await showSuccessAlert('Berhasil!', 'Jadwal keamanan telah dihapus');
+        fetchSchedules();
+      } catch (error: any) {
+        console.error('Error deleting schedule:', error);
+        await showErrorAlert('Error', error.response?.data?.error || 'Gagal menghapus jadwal keamanan');
+      } finally {
         setIsLoading(false);
-        showSuccessAlert('Berhasil!', 'Jadwal keamanan telah dihapus');
-      }, 600);
+      }
     }
   };
 
@@ -145,7 +146,7 @@ export default function SecuritySchedulePage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Jadwal Keamanan</h2>
           <p className="text-gray-600 mt-1 text-sm md:text-base">Kelola jadwal petugas keamanan</p>
         </div>
-        {getPermissions(userRole).canManageSchedule && (
+        {isMounted && userRole === 'rw' && (
           <button onClick={openAddModal} className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
             + Tambah Jadwal
           </button>
@@ -184,7 +185,7 @@ export default function SecuritySchedulePage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm space-x-2">
-                    {getPermissions(userRole).canManageSchedule ? (
+                    {isMounted && userRole === 'rw' ? (
                       <>
                         <button onClick={() => openEditModal(schedule)} className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors">✏️ Edit</button>
                         <span className="text-gray-300">•</span>

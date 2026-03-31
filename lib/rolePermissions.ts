@@ -1,77 +1,88 @@
 // Role-based permission system
-export type UserRole = 'admin' | 'security' | 'resident';
+export type UserRole = 'rw' | 'rt' | 'warga';
 
 export interface Permission {
-  canViewResidents: boolean;
+  // RW-only permissions
+  canManageRT: boolean;
+  canViewAllRTData: boolean;
+  canManageSecurityData: boolean;
+  
+  // RT-specific permissions
   canManageResidents: boolean;
-  canViewSchedule: boolean;
-  canManageSchedule: boolean;
-  canViewAnnouncements: boolean;
   canManageAnnouncements: boolean;
-  canViewFeedback: boolean;
   canManageFeedback: boolean;
-  canSubmitReports: boolean;
-  canViewReports: boolean;
+  
+  // Shared/Warga permissions
+  canViewResidents: boolean;
+  canViewSchedule: boolean;
+  canViewAnnouncements: boolean;
+  canViewFeedback: boolean;
   canSubmitFeedback: boolean;
+  canManageSchedule: boolean;
 }
 
 export const rolePermissions: Record<UserRole, Permission> = {
-  admin: {
-    // RT/RW - Full access
-    canViewResidents: true,
-    canManageResidents: true,
-    canViewSchedule: true,
-    canManageSchedule: true,
-    canViewAnnouncements: true,
+  rw: {
+    // RW (Rukun Warga) - Community Head - Full access
+    canManageRT: true,
+    canViewAllRTData: true,
+    canManageSecurityData: true,
+    canManageResidents: false, // Only through RT
     canManageAnnouncements: true,
-    canViewFeedback: true,
     canManageFeedback: true,
-    canSubmitReports: false,
-    canViewReports: true,
-    canSubmitFeedback: false,
-  },
-  security: {
-    // Security - Limited access
-    canViewResidents: false,
-    canManageResidents: false,
+    canViewResidents: false, // Only through RT
     canViewSchedule: true,
-    canManageSchedule: false,
     canViewAnnouncements: true,
-    canManageAnnouncements: false,
-    canViewFeedback: false,
-    canManageFeedback: false,
-    canSubmitReports: true,
-    canViewReports: false,
+    canViewFeedback: true,
     canSubmitFeedback: false,
+    canManageSchedule: true,
   },
-  resident: {
-    // Warga - Minimal access
-    canViewResidents: false,
-    canManageResidents: false,
+  rt: {
+    // RT (Rukun Tetangga) - Smaller unit head - Limited access
+    canManageRT: false,
+    canViewAllRTData: false,
+    canManageSecurityData: false,
+    canManageResidents: true,
+    canManageAnnouncements: true,
+    canManageFeedback: true,
+    canViewResidents: true,
     canViewSchedule: true,
-    canManageSchedule: false,
     canViewAnnouncements: true,
+    canViewFeedback: true,
+    canSubmitFeedback: true, // Can submit own feedback too
+    canManageSchedule: false,
+  },
+  warga: {
+    // Warga (Resident) - Minimal access
+    canManageRT: false,
+    canViewAllRTData: false,
+    canManageSecurityData: false,
+    canManageResidents: false,
     canManageAnnouncements: false,
-    canViewFeedback: false,
     canManageFeedback: false,
-    canSubmitReports: false,
-    canViewReports: false,
+    canViewResidents: false,
+    canViewSchedule: true,
+    canViewAnnouncements: true,
+    canViewFeedback: true, // Only own feedback
     canSubmitFeedback: true,
+    canManageSchedule: false,
   },
 };
 
-export const getPermissions = (role: UserRole): Permission => {
-  return rolePermissions[role];
+export const getPermissions = (role?: UserRole | string | null): Permission => {
+  // Default to warga if role is invalid or undefined
+  const validRole = (role && role in rolePermissions) ? (role as UserRole) : 'warga';
+  return rolePermissions[validRole];
 };
 
 export const roleLabels: Record<UserRole, string> = {
-  admin: 'RT/RW',
-  security: 'Keamanan',
-  resident: 'Warga',
+  rw: 'Rukun Warga',
+  rt: 'Rukun Tetangga',
+  warga: 'Warga',
 };
 
 export const roleIcons: Record<UserRole, string> = {
-  admin: '👨‍💼',
-  security: '🔐',
-  resident: '👤',
+  rw: '👨‍💼',
+  rt: '👷',
+  warga: '👤',
 };

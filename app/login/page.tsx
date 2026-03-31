@@ -119,7 +119,6 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
                 disabled={isLoading}
                 className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#003366] focus:bg-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               />

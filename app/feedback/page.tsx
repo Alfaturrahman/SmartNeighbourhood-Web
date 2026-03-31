@@ -15,7 +15,8 @@ export default function FeedbackPage() {
   const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [userRole, setUserRole] = useState<UserRole>('resident');
+  const [isMounted, setIsMounted] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>('warga');
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -38,6 +39,7 @@ export default function FeedbackPage() {
       return;
     }
     
+    setIsMounted(true);
     fetchFeedbacks();
   }, [router]);
 
@@ -110,12 +112,20 @@ export default function FeedbackPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(async () => {
+    try {
+      if (selectedFeedback) {
+        await feedbackService.reply(selectedFeedback.id, replyText);
+        await showSuccessAlert('Berhasil!', 'Balasan Anda telah dikirim kepada warga');
+        setReplyModalOpen(false);
+        setReplyText('');
+        fetchFeedbacks();
+      }
+    } catch (error: any) {
+      console.error('Error replying to feedback:', error);
+      await showErrorAlert('Error', error.response?.data?.error || 'Gagal mengirim balasan');
+    } finally {
       setIsLoading(false);
-      setReplyModalOpen(false);
-      setReplyText('');
-      await showSuccessAlert('Berhasil!', 'Balasan Anda telah dikirim kepada warga');
-    }, 600);
+    }
   };
 
   const handleDelete = async (feedback: any) => {
@@ -133,11 +143,16 @@ export default function FeedbackPage() {
 
     if (result.isConfirmed) {
       setIsLoading(true);
-      setTimeout(() => {
-        setFeedbacks(feedbacks.filter(f => f.id !== feedback.id));
+      try {
+        await feedbackService.delete(feedback.id);
+        await showSuccessAlert('Berhasil!', 'Feedback telah dihapus');
+        fetchFeedbacks();
+      } catch (error: any) {
+        console.error('Error deleting feedback:', error);
+        await showErrorAlert('Error', error.response?.data?.error || 'Gagal menghapus feedback');
+      } finally {
         setIsLoading(false);
-        showSuccessAlert('Berhasil!', 'Feedback telah dihapus');
-      }, 600);
+      }
     }
   };
 
@@ -148,7 +163,7 @@ export default function FeedbackPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Feedback & Umpan Balik</h2>
           <p className="text-gray-600 mt-1 text-sm md:text-base">Kelola feedback dari warga komunitas</p>
         </div>
-        {getPermissions(userRole).canSubmitFeedback && (
+        {isMounted && userRole !== 'warga' && (
           <button onClick={openAddModal} className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
             + Berikan Feedback
           </button>
@@ -176,7 +191,7 @@ export default function FeedbackPage() {
                   <p className="text-gray-700 mb-4 leading-relaxed">{fb.content}</p>
                   
                   <div className="flex gap-2 pt-4 border-t border-gray-100">
-                    {getPermissions(userRole).canManageFeedback ? (
+                    {isMounted && userRole !== 'warga' ? (
                       <>
                         <button onClick={() => openReplyModal(fb)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">💬 Balas</button>
                         <span className="text-gray-300">•</span>

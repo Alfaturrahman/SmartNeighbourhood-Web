@@ -11,10 +11,14 @@ import type { Resident, ResidentFormData } from '@/types';
 export default function ResidentsPage() {
   const [residents, setResidents] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'aktif' | 'tidak aktif'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>('resident');
+  const [isMounted, setIsMounted] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>('warga');
   const [formData, setFormData] = useState<ResidentFormData>({
     name: '',
     address: '',
@@ -39,6 +43,7 @@ export default function ResidentsPage() {
       return;
     }
     
+    setIsMounted(true);
     fetchResidents();
   }, [router]);
 
@@ -57,10 +62,30 @@ export default function ResidentsPage() {
     }
   };
 
-  const filteredResidents = residents.filter(r =>
-    r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.address.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredResidents = residents.filter(r => {
+    // Status filter
+    if (statusFilter !== 'all' && r.status !== statusFilter) {
+      return false;
+    }
+    // Search filter (name or address)
+    if (searchTerm && !r.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !r.address.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredResidents.length / pageSize);
+  const paginatedResidents = filteredResidents.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const openAddModal = () => {
     setEditingId(null);
@@ -143,7 +168,7 @@ export default function ResidentsPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Manajemen Warga</h2>
           <p className="text-gray-600 mt-1 text-sm md:text-base">Total {filteredResidents.length} warga terdaftar</p>
         </div>
-        {getPermissions(userRole).canManageResidents && (
+        {isMounted && userRole !== 'warga' && (
           <button
             onClick={openAddModal}
             className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
@@ -153,15 +178,28 @@ export default function ResidentsPage() {
         )}
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="🔍 Cari berdasarkan nama atau alamat..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent transition-all duration-200 bg-white"
-        />
+      {/* Search Bar & Filter */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <input
+            type="text"
+            placeholder="🔍 Cari berdasarkan nama atau alamat..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent transition-all duration-200 bg-white"
+          />
+        </div>
+        <div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'aktif' | 'tidak aktif')}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent transition-all duration-200 bg-white"
+          >
+            <option value="all">📊 Semua Status</option>
+            <option value="aktif">✓ Aktif</option>
+            <option value="tidak aktif">✕ Tidak Aktif</option>
+          </select>
+        </div>
       </div>
 
       {/* Residents Table */}
@@ -180,7 +218,7 @@ export default function ResidentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredResidents.map((resident) => (
+              {paginatedResidents.map((resident) => (
                 <tr key={resident.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
                   <td className="px-6 py-4 font-medium text-gray-900">{resident.name}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm">{resident.email}</td>
@@ -196,7 +234,7 @@ export default function ResidentsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm space-x-2">
-                    {getPermissions(userRole).canManageResidents ? (
+                    {isMounted && userRole !== 'warga' ? (
                       <>
                         <button
                           onClick={() => openEditModal(resident)}
@@ -229,6 +267,46 @@ export default function ResidentsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {filteredResidents.length > 0 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Menampilkan {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filteredResidents.length)} dari {filteredResidents.length} warga
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 font-medium rounded-lg transition-all disabled:cursor-not-allowed"
+            >
+              ← Sebelumnya
+            </button>
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-2 rounded-lg font-medium transition-all ${
+                    currentPage === page
+                      ? 'bg-[#003366] text-white'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 font-medium rounded-lg transition-all disabled:cursor-not-allowed"
+            >
+              Berikutnya →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal Form */}
       <Modal

@@ -4,14 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
-import { getPermissions, UserRole } from '@/lib/rolePermissions';
 import { residentService } from '@/services/modules/residentService';
 import type { Resident, ResidentFormData } from '@/types';
 
 export default function DashboardPage() {
   const [residents, setResidents] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState<UserRole>('resident');
+  const [userRole, setUserRole] = useState<'rw' | 'rt' | 'warga'>('warga');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,8 +57,7 @@ export default function DashboardPage() {
   ];
 
   const openAddModal = () => {
-    const permissions = getPermissions(userRole);
-    if (!permissions.canManageResidents) {
+    if (userRole === 'warga') {
       showErrorAlert('Akses Ditolak', 'Hanya RT/RW yang dapat menambah warga');
       return;
     }
@@ -69,8 +67,7 @@ export default function DashboardPage() {
   };
 
   const openEditModal = (resident: any) => {
-    const permissions = getPermissions(userRole);
-    if (!permissions.canManageResidents) {
+    if (userRole === 'warga') {
       showErrorAlert('Akses Ditolak', 'Hanya RT/RW yang dapat mengedit warga');
       return;
     }
@@ -87,8 +84,7 @@ export default function DashboardPage() {
 
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    const permissions = getPermissions(userRole);
-    if (!permissions.canManageResidents) {
+    if (userRole === 'warga') {
       await showErrorAlert('Akses Ditolak', 'Anda tidak memiliki izin untuk mengelola data warga');
       return;
     }
@@ -142,7 +138,7 @@ export default function DashboardPage() {
         <div className="border-t-4 border-[#66CC66]"></div>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-6 py-4 border-b border-gray-200 gap-4">
           <h3 className="text-lg font-bold text-[#003366]">Daftar Warga Terbaru</h3>
-          {getPermissions(userRole).canManageResidents && (
+          {userRole !== 'warga' && (
             <button
               onClick={openAddModal}
               className="w-full md:w-auto px-4 py-2 bg-[#FF9500] hover:bg-[#FF8C00] text-white text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
