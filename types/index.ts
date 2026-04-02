@@ -71,7 +71,10 @@ export interface SecuritySchedule {
   id: number;
   name: string;
   shift: 'Pagi' | 'Siang' | 'Malam';
-  date: string;
+  schedule_type: 'daily' | 'weekly' | 'monthly';
+  date?: string;
+  weekday?: number;
+  month_day?: number;
   time: string;
   status: 'aktif' | 'tidak aktif';
   notes?: string;
@@ -80,7 +83,12 @@ export interface SecuritySchedule {
 export interface SecurityScheduleFormData {
   name: string;
   shift: 'Pagi' | 'Siang' | 'Malam';
-  date: string;
+  schedule_type: 'daily' | 'weekly' | 'monthly';
+  date?: string;
+  start_date?: string;
+  end_date?: string;
+  weekday?: number;
+  month_day?: number;
   time: string;
   status: 'aktif' | 'tidak aktif';
   notes?: string;

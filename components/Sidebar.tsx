@@ -19,6 +19,7 @@ const MENU_ITEMS: MenuItem[] = [
   { href: '/rt-management', label: 'Manajemen RT', icon: '👔', roles: ['rw'] },
   { href: '/warga-management', label: 'Manajemen Warga', icon: '👥', roles: ['rt'] },
   { href: '/residents', label: 'Data Warga', icon: '👨‍👩‍👧‍👦', roles: ['rw', 'rt', 'warga'] },
+  { href: '/security-personnel', label: 'Master Keamanan', icon: '🛟', roles: ['rw'] },
   { href: '/security-schedule', label: 'Jadwal Keamanan', icon: '🔐', roles: ['rw'] },
   { href: '/feedback', label: 'Feedback', icon: '💬', roles: ['rw', 'rt', 'warga'] },
   { href: '/announcements', label: 'Pengumuman', icon: '📢', roles: ['rw', 'rt', 'warga'] },
@@ -37,7 +38,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   }, []);
 
   const visibleMenuItems = MENU_ITEMS.filter((item) =>
-    item.roles.includes(userRole || 'resident')
+    item.roles.includes(userRole || 'warga')
   );
 
   const handleNavigate = () => {

@@ -6,18 +6,24 @@ import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
 import { securityScheduleService } from '@/services/modules/securityScheduleService';
+import { securityPersonnelService } from '@/services/modules/securityPersonnelService';
 import type { SecuritySchedule, SecurityScheduleFormData } from '@/types';
 
 export default function SecuritySchedulePage() {
   const [schedules, setSchedules] = useState<any[]>([]);
+  const [personnel, setPersonnel] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>('resident');
+  const [isMounted, setIsMounted] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>('warga');
   const [formData, setFormData] = useState<SecurityScheduleFormData>({
     name: '',
     shift: 'Pagi',
+    schedule_type: 'daily',
     date: '',
+    weekday: 0,
+    month_day: 1,
     time: '06:00 - 12:00',
     status: 'aktif',
   });
@@ -38,7 +44,9 @@ export default function SecuritySchedulePage() {
       return;
     }
     
+    setIsMounted(true);
     fetchSchedules();
+    fetchPersonnel();
   }, [router]);
 
   const fetchSchedules = async () => {
@@ -56,6 +64,17 @@ export default function SecuritySchedulePage() {
     }
   };
 
+  const fetchPersonnel = async () => {
+    try {
+      const response = await securityPersonnelService.getAll({ status: 'aktif' });
+      const data = (response.results || response.data || []) as any[];
+      setPersonnel(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      console.error('Error fetching personnel:', error);
+      setPersonnel([]);
+    }
+  };
+
   const getShiftColor = (shift: string) => {
     switch(shift) {
       case 'Pagi': return 'bg-yellow-100 text-yellow-800';
@@ -66,8 +85,25 @@ export default function SecuritySchedulePage() {
   };
 
   const openAddModal = () => {
+    if (personnel.length === 0) {
+      showErrorAlert('Master Keamanan Kosong', 'Tambahkan petugas keamanan di Master Data Keamanan terlebih dahulu sebelum membuat jadwal.').then(() => {
+        router.push('/security-personnel');
+      });
+      return;
+    }
     setEditingId(null);
-    setFormData({ name: '', shift: 'Pagi', date: '', time: '06:00 - 12:00', status: 'aktif' });
+    setFormData({ 
+      name: '', 
+      shift: 'Pagi', 
+      schedule_type: 'daily',
+      date: '', 
+      start_date: '',
+      end_date: '',
+      weekday: 0,
+      month_day: 1,
+      time: '06:00 - 12:00', 
+      status: 'aktif' 
+    });
     setModalOpen(true);
   };
 
@@ -76,7 +112,12 @@ export default function SecuritySchedulePage() {
     setFormData({
       name: schedule.name,
       shift: schedule.shift,
-      date: schedule.date,
+      schedule_type: schedule.schedule_type || 'daily',
+      date: schedule.date || '',
+      start_date: schedule.start_date || '',
+      end_date: schedule.end_date || '',
+      weekday: schedule.weekday ?? 0,
+      month_day: schedule.month_day ?? 1,
       time: schedule.time,
       status: schedule.status,
     });
@@ -162,14 +203,34 @@ export default function SecuritySchedulePage() {
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Nama Petugas</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Shift</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Tanggal</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Jenis Jadwal</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Rincian</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Jam</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {schedules.map((schedule) => (
+              {schedules.map((schedule) => {
+                let scheduleLabel = '';
+                if (schedule.schedule_type === 'weekly' && schedule.weekday !== undefined) {
+                  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                  if (schedule.start_date && schedule.end_date) {
+                    scheduleLabel = `Setiap ${days[schedule.weekday]} (${new Date(schedule.start_date).toLocaleDateString('id-ID')} - ${new Date(schedule.end_date).toLocaleDateString('id-ID')})`;
+                  } else {
+                    scheduleLabel = `Setiap ${days[schedule.weekday]}`;
+                  }
+                } else if (schedule.schedule_type === 'monthly' && schedule.month_day) {
+                  if (schedule.start_date && schedule.end_date) {
+                    scheduleLabel = `Tanggal ${schedule.month_day} (${new Date(schedule.start_date).toLocaleDateString('id-ID')} - ${new Date(schedule.end_date).toLocaleDateString('id-ID')})`;
+                  } else {
+                    scheduleLabel = `Tanggal ${schedule.month_day} tiap bulan`;
+                  }
+                } else {
+                  scheduleLabel = schedule.date || 'N/A';
+                }
+                
+                return (
                 <tr key={schedule.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
                   <td className="px-6 py-4 font-medium text-gray-900">{schedule.name}</td>
                   <td className="px-6 py-4">
@@ -177,7 +238,14 @@ export default function SecuritySchedulePage() {
                       {schedule.shift}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">{schedule.date}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                      {schedule.schedule_type === 'daily' && '📅 Harian'}
+                      {schedule.schedule_type === 'weekly' && '📆 Mingguan'}
+                      {schedule.schedule_type === 'monthly' && '📊 Bulanan'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">{scheduleLabel}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-medium">{schedule.time}</td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -196,7 +264,8 @@ export default function SecuritySchedulePage() {
                     )}
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
         </div>
@@ -215,14 +284,34 @@ export default function SecuritySchedulePage() {
               <label className="block text-sm font-semibold text-gray-900 mb-2">
                 Nama Petugas *
               </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Nama petugas keamanan"
-                required
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-              />
+              {personnel.length === 0 ? (
+                <div className="w-full px-4 py-2 border-2 border-orange-400 rounded-lg bg-orange-50">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg flex-shrink-0 mt-0.5">⚠️</span>
+                    <div className="flex-1">
+                      <p className="text-orange-900 font-semibold text-sm mb-2">Tidak ada petugas aktif</p>
+                      <p className="text-orange-700 text-xs mb-3">Anda harus menambahkan petugas keamanan terlebih dahulu di Master Data Keamanan sebelum membuat jadwal.</p>
+                      <a href="/security-personnel" className="text-orange-600 hover:text-orange-700 font-semibold text-xs underline hover:no-underline transition-all inline-block">
+                        → Buka Master Data Keamanan
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <select
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                >
+                  <option value="">Pilih Petugas Keamanan</option>
+                  {personnel.map((p) => (
+                    <option key={p.id} value={p.name}>
+                      {p.name} ({p.area || 'Umum'})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
@@ -242,15 +331,17 @@ export default function SecuritySchedulePage() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Tanggal *
+                Tipe Jadwal *
               </label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                required
+              <select
+                value={formData.schedule_type}
+                onChange={(e) => setFormData({ ...formData, schedule_type: e.target.value as 'daily' | 'weekly' | 'monthly' })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-              />
+              >
+                <option value="daily">📅 Harian</option>
+                <option value="weekly">📆 Mingguan</option>
+                <option value="monthly">📊 Bulanan</option>
+              </select>
             </div>
 
             <div>
@@ -267,6 +358,114 @@ export default function SecuritySchedulePage() {
               </select>
             </div>
           </div>
+
+          {formData.schedule_type === 'daily' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Tanggal *
+              </label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                required
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+              />
+            </div>
+          )}
+
+          {formData.schedule_type === 'weekly' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Tanggal Mulai *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.start_date || ''}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Tanggal Berakhir *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.end_date || ''}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Hari *
+                </label>
+                <select
+                  value={formData.weekday ?? 0}
+                  onChange={(e) => setFormData({ ...formData, weekday: parseInt(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                >
+                  <option value={0}>Senin</option>
+                  <option value={1}>Selasa</option>
+                  <option value={2}>Rabu</option>
+                  <option value={3}>Kamis</option>
+                  <option value={4}>Jumat</option>
+                  <option value={5}>Sabtu</option>
+                  <option value={6}>Minggu</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {formData.schedule_type === 'monthly' && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Tanggal Mulai *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.start_date || ''}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Tanggal Berakhir *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.end_date || ''}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Tanggal Bulan (1-31) *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={formData.month_day ?? 1}
+                  onChange={(e) => setFormData({ ...formData, month_day: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) })}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">

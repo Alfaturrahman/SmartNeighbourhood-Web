@@ -6,18 +6,27 @@ import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { getPermissions, UserRole } from '@/lib/rolePermissions';
 import { announcementService } from '@/services/modules/announcementService';
+import { rtService } from '@/services/modules/rtService';
 import type { Announcement } from '@/types';
 
 export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [rts, setRts] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState<UserRole>('resident');
+  const [userRole, setUserRole] = useState<UserRole>('warga');
+  const [isMounted, setIsMounted] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    content: string;
+    author: string;
+    priority: 'high' | 'medium' | 'low';
+    rt_id?: number;
+  }>({
     title: '',
     content: '',
     author: '',
@@ -41,7 +50,11 @@ export default function AnnouncementsPage() {
       return;
     }
     
+    setIsMounted(true);
     fetchAnnouncements();
+    if (parsedUser.role === 'rw') {
+      fetchRTs();
+    }
   }, [router]);
 
   const fetchAnnouncements = async () => {
@@ -56,6 +69,17 @@ export default function AnnouncementsPage() {
       setAnnouncements([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchRTs = async () => {
+    try {
+      const response = await rtService.getAll();
+      const data = (response.results || response.data || []) as any[];
+      setRts(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      console.error('Error fetching RTs:', error);
+      setRts([]);
     }
   };
 
@@ -106,7 +130,11 @@ export default function AnnouncementsPage() {
       return;
     }
     setEditingId(null);
-    setFormData({ title: '', content: '', author: user?.name || '', priority: 'medium' });
+    const newFormData: any = { title: '', content: '', author: user?.name || '', priority: 'medium' };
+    if (userRole === 'rw' && rts.length > 0) {
+      newFormData.rt_id = rts[0].id;
+    }
+    setFormData(newFormData);
     setModalOpen(true);
   };
 
@@ -141,7 +169,10 @@ export default function AnnouncementsPage() {
         await announcementService.update(editingId, formData);
         await showSuccessAlert('Berhasil!', 'Pengumuman berhasil diperbarui');
       } else {
-        await announcementService.create(formData);
+        const dataToSend = userRole === 'rw' && formData.rt_id 
+          ? { ...formData, rt_id: formData.rt_id }
+          : formData;
+        await announcementService.create(dataToSend);
         await showSuccessAlert('Berhasil!', 'Pengumuman baru berhasil dibuat');
       }
       setModalOpen(false);
@@ -267,6 +298,33 @@ export default function AnnouncementsPage() {
             />
           </div>
 
+          {userRole === 'rw' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Pengumuman untuk RT *
+              </label>
+              {rts.length === 0 ? (
+                <div className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-orange-50 text-orange-700 text-sm">
+                  ⚠️ Tidak ada RT yang tersedia
+                </div>
+              ) : (
+                <select
+                  value={formData.rt_id || ''}
+                  onChange={(e) => setFormData({ ...formData, rt_id: parseInt(e.target.value) })}
+                  required
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+                >
+                  <option value="">Pilih RT</option>
+                  {rts.map((rt: any) => (
+                    <option key={rt.id} value={rt.id}>
+                      {rt.name} ({rt.area || 'Area Umum'})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Isi Pengumuman *
@@ -287,7 +345,7 @@ export default function AnnouncementsPage() {
             </label>
             <select
               value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'high' | 'medium' | 'low' })}
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
             >
               <option value="low">🟢 Rendah</option>

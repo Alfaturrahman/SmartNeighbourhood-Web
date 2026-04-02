@@ -149,6 +149,32 @@ export default function WargaManagementPage() {
     }
   };
 
+  const handleResetWargaPassword = async (id: number, name: string) => {
+    const result = await showConfirmAlert(
+      'Reset Password Warga',
+      `Apakah Anda yakin ingin mereset password warga "${name}"?`
+    );
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsLoading(true);
+      const response = await wargaService.resetPassword(id);
+      const newPassword = response.data?.new_password || '';
+      
+      await showSuccessAlert(
+        'Password Warga Direset',
+        `Email: ${response.data?.user_email}\nPassword Baru: ${newPassword}\n\nBagikan password ini ke Warga.`
+      );
+      fetchWargas();
+    } catch (error: any) {
+      console.error('Error:', error);
+      await showErrorAlert('Error', 'Gagal mereset password warga');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -159,7 +185,6 @@ export default function WargaManagementPage() {
     }));
   };
 
-  return (
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -284,7 +309,7 @@ export default function WargaManagementPage() {
                         {warga.status === 'aktif' ? '✓ Aktif' : '✗ Tidak Aktif'}
                       </span>
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-sm space-x-2">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-sm space-x-2 flex flex-wrap gap-2">
                       <button
                         onClick={() => {
                           setEditingId(warga.id);
@@ -297,14 +322,21 @@ export default function WargaManagementPage() {
                           });
                           setModalOpen(true);
                         }}
-                        className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors"
+                        className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors whitespace-nowrap"
                       >
                         ✏️ Edit
                       </button>
                       <span className="text-gray-300">•</span>
                       <button
+                        onClick={() => handleResetWargaPassword(warga.id, warga.name)}
+                        className="text-orange-600 hover:text-orange-800 font-medium text-xs transition-colors whitespace-nowrap"
+                      >
+                        🔐 Reset Pass
+                      </button>
+                      <span className="text-gray-300">•</span>
+                      <button
                         onClick={() => handleDeleteWarga(warga.id, warga.name)}
-                        className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors"
+                        className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors whitespace-nowrap"
                       >
                         🗑️ Hapus
                       </button>

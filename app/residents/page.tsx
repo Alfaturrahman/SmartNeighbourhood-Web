@@ -168,7 +168,7 @@ export default function ResidentsPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Manajemen Warga</h2>
           <p className="text-gray-600 mt-1 text-sm md:text-base">Total {filteredResidents.length} warga terdaftar</p>
         </div>
-        {isMounted && userRole !== 'warga' && (
+        {isMounted && userRole === 'rt' && (
           <button
             onClick={openAddModal}
             className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
@@ -234,7 +234,7 @@ export default function ResidentsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm space-x-2">
-                    {isMounted && userRole !== 'warga' ? (
+                    {isMounted && userRole === 'rt' ? (
                       <>
                         <button
                           onClick={() => openEditModal(resident)}

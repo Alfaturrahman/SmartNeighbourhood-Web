@@ -71,4 +71,14 @@ export const rtService = {
       throw error.response?.data || error;
     }
   },
+
+  // Reset RT password
+  resetPassword: async (id: number) => {
+    try {
+      const response = await client.post(`/rw/${id}/reset_password/`);
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
 };

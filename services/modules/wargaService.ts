@@ -73,4 +73,14 @@ export const wargaService = {
       throw error.response?.data || error;
     }
   },
+
+  // Reset resident password
+  resetPassword: async (id: number) => {
+    try {
+      const response = await client.post(`/residents/${id}/reset_password/`);
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  },
 };

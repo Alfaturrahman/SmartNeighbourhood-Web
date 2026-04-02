@@ -30,7 +30,7 @@ export const rolePermissions: Record<UserRole, Permission> = {
     canManageResidents: false, // Only through RT
     canManageAnnouncements: true,
     canManageFeedback: true,
-    canViewResidents: false, // Only through RT
+    canViewResidents: true, // Can view their residents
     canViewSchedule: true,
     canViewAnnouncements: true,
     canViewFeedback: true,
