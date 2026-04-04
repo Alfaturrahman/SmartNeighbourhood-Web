@@ -237,7 +237,7 @@ export default function AnnouncementsPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-[#003366]">{ann.title}</h3>
                   <div className="flex items-center gap-3 mt-1">
-                    <p className="text-sm text-gray-600">📝 {ann.author}</p>
+                    <p className="text-sm text-gray-600">📝 {ann.rt_name}</p>
                     <span className="text-gray-300">•</span>
                     <p className="text-sm text-gray-600">📅 {ann.date}</p>
                   </div>
@@ -285,15 +285,16 @@ export default function AnnouncementsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
+            {/* <label className="block text-sm font-semibold text-gray-900 mb-2">
               Nama Pembuat *
-            </label>
+            </label> */}
             <input
-              type="text"
+              type="hidden"
               value={formData.author}
               onChange={(e) => setFormData({ ...formData, author: e.target.value })}
               placeholder="Nama Anda"
               required
+              disabled
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
             />
           </div>

@@ -34,7 +34,7 @@ export const rolePermissions: Record<UserRole, Permission> = {
     canViewSchedule: true,
     canViewAnnouncements: true,
     canViewFeedback: true,
-    canSubmitFeedback: false,
+    canSubmitFeedback: true,
     canManageSchedule: true,
   },
   rt: {
@@ -59,7 +59,7 @@ export const rolePermissions: Record<UserRole, Permission> = {
     canManageSecurityData: false,
     canManageResidents: false,
     canManageAnnouncements: false,
-    canManageFeedback: false,
+    canManageFeedback: true,
     canViewResidents: false,
     canViewSchedule: true,
     canViewAnnouncements: true,

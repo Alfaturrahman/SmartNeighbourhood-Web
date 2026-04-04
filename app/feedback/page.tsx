@@ -163,7 +163,7 @@ export default function FeedbackPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#003366]">Feedback & Umpan Balik</h2>
           <p className="text-gray-600 mt-1 text-sm md:text-base">Kelola feedback dari warga komunitas</p>
         </div>
-        {isMounted && userRole !== 'warga' && (
+        {isMounted && userRole && (
           <button onClick={openAddModal} className="w-full sm:w-auto px-4 py-3 bg-[#FF9500] hover:bg-[#FF8C00] text-white font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95">
             + Berikan Feedback
           </button>
@@ -297,7 +297,7 @@ export default function FeedbackPage() {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Rating (1-5 bintang)
             </label>
@@ -315,7 +315,7 @@ export default function FeedbackPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button

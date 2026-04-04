@@ -307,7 +307,7 @@ export default function SecuritySchedulePage() {
                   <option value="">Pilih Petugas Keamanan</option>
                   {personnel.map((p) => (
                     <option key={p.id} value={p.name}>
-                      {p.name} ({p.area || 'Umum'})
+                      {p.name}
                     </option>
                   ))}
                 </select>
@@ -323,9 +323,9 @@ export default function SecuritySchedulePage() {
                 onChange={(e) => setFormData({ ...formData, shift: e.target.value as 'Pagi' | 'Siang' | 'Malam' })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               >
-                <option value="Pagi">🌅 Pagi (06:00 - 12:00)</option>
-                <option value="Siang">☀️ Siang (12:00 - 18:00)</option>
-                <option value="Malam">🌙 Malam (18:00 - 06:00)</option>
+                <option value="Pagi">🌅 Pagi</option>
+                <option value="Siang">☀️ Siang</option>
+                <option value="Malam">🌙 Malam</option>
               </select>
             </div>
 

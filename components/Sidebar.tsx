@@ -15,10 +15,10 @@ interface SidebarProps {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: '🏠', roles: ['rw', 'rt', 'warga'] },
+  // { href: '/dashboard', label: 'Dashboard', icon: '🏠', roles: ['rw', 'rt', 'warga'] },
   { href: '/rt-management', label: 'Manajemen RT', icon: '👔', roles: ['rw'] },
   { href: '/warga-management', label: 'Manajemen Warga', icon: '👥', roles: ['rt'] },
-  { href: '/residents', label: 'Data Warga', icon: '👨‍👩‍👧‍👦', roles: ['rw', 'rt', 'warga'] },
+  // { href: '/residents', label: 'Data Warga', icon: '👨‍👩‍👧‍👦', roles: ['rw', 'warga'] },
   { href: '/security-personnel', label: 'Master Keamanan', icon: '🛟', roles: ['rw'] },
   { href: '/security-schedule', label: 'Jadwal Keamanan', icon: '🔐', roles: ['rw'] },
   { href: '/feedback', label: 'Feedback', icon: '💬', roles: ['rw', 'rt', 'warga'] },
