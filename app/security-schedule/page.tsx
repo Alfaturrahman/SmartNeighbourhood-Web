@@ -150,10 +150,10 @@ export default function SecuritySchedulePage() {
 
     try {
       // Clean payload - only send required fields for weekly schedule
-      const payload = {
+      const payload: SecurityScheduleFormData = {
         name: formData.name,
         shift: formData.shift,
-        schedule_type: 'weekly',
+        schedule_type: 'weekly' as const,
         start_date: formData.start_date,
         end_date: formData.end_date,
         time: formData.time,
