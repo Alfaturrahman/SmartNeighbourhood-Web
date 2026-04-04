@@ -12,6 +12,8 @@ export default function WargaManagementPage() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedWarga, setSelectedWarga] = useState<Warga | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'aktif' | 'tidak aktif'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +25,10 @@ export default function WargaManagementPage() {
     phone: '',
     address: '',
     status: 'aktif',
+    ktp: '',
+    kk: '',
+    jumlah_keluarga: 1,
+    kepala_keluarga: '',
   });
   const router = useRouter();
 
@@ -80,8 +86,17 @@ export default function WargaManagementPage() {
       phone: '',
       address: '',
       status: 'aktif',
+      ktp: '',
+      kk: '',
+      jumlah_keluarga: 1,
+      kepala_keluarga: '',
     });
     setModalOpen(true);
+  };
+
+  const openDetailModal = (warga: Warga) => {
+    setSelectedWarga(warga);
+    setDetailModalOpen(true);
   };
 
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -108,11 +123,11 @@ export default function WargaManagementPage() {
       } else {
         // Create new warga
         const response = await wargaService.create(formData);
-        const generatedPass = response.data?.generated_password || '';
+        const generatedPass = response.data?.generated_password || 'passw0rd';
         
         await showSuccessAlert(
           'Warga Berhasil Ditambahkan',
-          `Email: ${response.data?.user_email}\nPassword: ${generatedPass}\n\nBagikan kredensial ini ke Warga untuk login.`
+          `Email: ${response.data?.user_email}\nPassword: ${generatedPass}\n\nPassword default untuk semua akun baru adalah: passw0rd\nBagikan kredensial ini ke Warga untuk login.`
         );
       }
 
@@ -120,9 +135,28 @@ export default function WargaManagementPage() {
       setCurrentPage(1);
       fetchWargas(); // Refresh list
     } catch (error: any) {
-      console.error('Error:', error);
-      const errorMsg = error.data?.email?.[0] || error.message || 'Terjadi kesalahan';
-      await showErrorAlert('Error', errorMsg);
+      console.error('Error creating warga:', error);
+      
+      let errorMsg = 'Terjadi kesalahan saat membuat akun warga';
+      
+      // Check if error has email validation error
+      if (error.email && Array.isArray(error.email)) {
+        errorMsg = `Email: ${error.email[0]}`;
+      } else if (error.data?.email && Array.isArray(error.data.email)) {
+        errorMsg = `Email: ${error.data.email[0]}`;
+      } else if (error.response?.data?.email && Array.isArray(error.response.data.email)) {
+        errorMsg = `Email: ${error.response.data.email[0]}`;
+      } else if (error.response?.data?.error) {
+        errorMsg = error.response.data.error;
+      } else if (error.data?.error) {
+        errorMsg = error.data.error;
+      } else if (error.message) {
+        errorMsg = error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      }
+      
+      await showErrorAlert('Gagal Membuat Akun Warga', errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +186,8 @@ export default function WargaManagementPage() {
   const handleResetWargaPassword = async (id: number, name: string) => {
     const result = await showConfirmAlert(
       'Reset Password Warga',
-      `Apakah Anda yakin ingin mereset password warga "${name}"?`
+      `Apakah Anda yakin ingin mereset password warga "${name}"?`,
+      'Ya, Reset'
     );
 
     if (!result.isConfirmed) return;
@@ -160,11 +195,13 @@ export default function WargaManagementPage() {
     try {
       setIsLoading(true);
       const response = await wargaService.resetPassword(id);
-      const newPassword = response.data?.new_password || '';
+      console.log('Reset Warga Password Response:', response);
+      const newPassword = response.data?.data?.new_password || response.data?.new_password || 'passw0rd';
+      const userEmail = response.data?.data?.user_email || response.data?.user_email || 'Email tidak ditemukan';
       
       await showSuccessAlert(
         'Password Warga Direset',
-        `Email: ${response.data?.user_email}\nPassword Baru: ${newPassword}\n\nBagikan password ini ke Warga.`
+        `Email: ${userEmail}\nPassword Baru: ${newPassword}\n\nPassword telah direset ke default: passw0rd\nBagikan password ini ke Warga.`
       );
       fetchWargas();
     } catch (error: any) {
@@ -178,10 +215,10 @@ export default function WargaManagementPage() {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'number' ? parseInt(value) || 1 : value,
     }));
   };
 
@@ -309,37 +346,50 @@ export default function WargaManagementPage() {
                         {warga.status === 'aktif' ? '✓ Aktif' : '✗ Tidak Aktif'}
                       </span>
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-sm space-x-2 flex flex-wrap gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingId(warga.id);
-                          setFormData({
-                            name: warga.name,
-                            email: warga.email,
-                            phone: warga.phone,
-                            address: warga.address,
-                            status: warga.status,
-                          });
-                          setModalOpen(true);
-                        }}
-                        className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors whitespace-nowrap"
-                      >
-                        ✏️ Edit
-                      </button>
-                      <span className="text-gray-300">•</span>
-                      <button
-                        onClick={() => handleResetWargaPassword(warga.id, warga.name)}
-                        className="text-orange-600 hover:text-orange-800 font-medium text-xs transition-colors whitespace-nowrap"
-                      >
-                        🔐 Reset Pass
-                      </button>
-                      <span className="text-gray-300">•</span>
-                      <button
-                        onClick={() => handleDeleteWarga(warga.id, warga.name)}
-                        className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors whitespace-nowrap"
-                      >
-                        🗑️ Hapus
-                      </button>
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-sm">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => openDetailModal(warga)}
+                          className="text-blue-600 hover:text-blue-800 font-medium text-xs transition-colors whitespace-nowrap"
+                        >
+                          🔍 Detail
+                        </button>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          onClick={() => {
+                            setEditingId(warga.id);
+                            setFormData({
+                              name: warga.name,
+                              email: warga.email,
+                              phone: warga.phone,
+                              address: warga.address,
+                              status: warga.status,
+                              ktp: warga.ktp || '',
+                              kk: warga.kk || '',
+                              jumlah_keluarga: warga.jumlah_keluarga || 1,
+                              kepala_keluarga: warga.kepala_keluarga || '',
+                            });
+                            setModalOpen(true);
+                          }}
+                          className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors whitespace-nowrap"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          onClick={() => handleResetWargaPassword(warga.id, warga.name)}
+                          className="text-orange-600 hover:text-orange-800 font-medium text-xs transition-colors whitespace-nowrap"
+                        >
+                          🔐 Reset Pass
+                        </button>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          onClick={() => handleDeleteWarga(warga.id, warga.name)}
+                          className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs transition-colors whitespace-nowrap"
+                        >
+                          🗑️ Hapus
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -449,6 +499,61 @@ export default function WargaManagementPage() {
             />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nomor KTP</label>
+              <input
+                type="text"
+                name="ktp"
+                value={formData.ktp || ''}
+                onChange={handleInputChange}
+                placeholder="16 digit Nomor KTP"
+                maxLength={16}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nomor Kartu Keluarga (KK)</label>
+              <input
+                type="text"
+                name="kk"
+                value={formData.kk || ''}
+                onChange={handleInputChange}
+                placeholder="16 digit Nomor KK"
+                maxLength={16}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah Anggota Keluarga</label>
+              <input
+                type="number"
+                name="jumlah_keluarga"
+                value={formData.jumlah_keluarga || 1}
+                onChange={handleInputChange}
+                min="1"
+                placeholder="Jumlah anggota keluarga"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nama Kepala Keluarga</label>
+              <input
+                type="text"
+                name="kepala_keluarga"
+                value={formData.kepala_keluarga || ''}
+                onChange={handleInputChange}
+                placeholder="Nama kepala keluarga"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:border-transparent"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
@@ -479,6 +584,115 @@ export default function WargaManagementPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Detail Modal */}
+      <Modal
+        isOpen={detailModalOpen}
+        title="Detail Warga"
+        onClose={() => setDetailModalOpen(false)}
+        size="lg"
+      >
+        {selectedWarga && (
+          <div className="space-y-6">
+            {/* Header Info */}
+            <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <div className="w-16 h-16 bg-[#003366] rounded-full flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+                {selectedWarga.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-bold text-[#003366] break-words">{selectedWarga.name}</h3>
+                <p className="text-sm text-gray-600 break-all">{selectedWarga.email}</p>
+                <div className="mt-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      selectedWarga.status === 'aktif'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {selectedWarga.status === 'aktif' ? '✓ Aktif' : '✗ Tidak Aktif'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Detail Information */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">📞 Telepon</p>
+                <p className="text-base font-medium text-gray-900 break-all">{selectedWarga.phone || '-'}</p>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">🏠 Status</p>
+                <p className="text-base font-medium text-gray-900">{selectedWarga.status}</p>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 sm:col-span-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">📍 Alamat</p>
+                <p className="text-base text-gray-900 break-words">{selectedWarga.address || '-'}</p>
+              </div>
+            </div>
+
+            {/* Family Information */}
+            <div className="border-t pt-4">
+              <h4 className="text-lg font-semibold text-[#003366] mb-4">👥 Informasi Keluarga</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 uppercase mb-1">🎫 Nomor KTP</p>
+                  <p className="text-base font-mono text-gray-900">{selectedWarga.ktp || '-'}</p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 uppercase mb-1">📝 Nomor KK</p>
+                  <p className="text-base font-mono text-gray-900">{selectedWarga.kk || '-'}</p>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <p className="text-xs font-semibold text-green-700 uppercase mb-1">👨‍👩‍👧‍👦 Jumlah Anggota Keluarga</p>
+                  <p className="text-2xl font-bold text-gray-900">{selectedWarga.jumlah_keluarga || '-'} orang</p>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <p className="text-xs font-semibold text-green-700 uppercase mb-1">👤 Kepala Keluarga</p>
+                  <p className="text-base font-medium text-gray-900 break-words">{selectedWarga.kepala_keluarga || '-'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                onClick={() => {
+                  setDetailModalOpen(false);
+                  setEditingId(selectedWarga.id);
+                  setFormData({
+                    name: selectedWarga.name,
+                    email: selectedWarga.email,
+                    phone: selectedWarga.phone,
+                    address: selectedWarga.address,
+                    status: selectedWarga.status,
+                    ktp: selectedWarga.ktp || '',
+                    kk: selectedWarga.kk || '',
+                    jumlah_keluarga: selectedWarga.jumlah_keluarga || 1,
+                    kepala_keluarga: selectedWarga.kepala_keluarga || '',
+                  });
+                  setModalOpen(true);
+                }}
+                className="flex-1 bg-[#003366] hover:bg-[#004d80] text-white font-semibold py-2.5 rounded-lg transition-all"
+              >
+                ✏️ Edit Data
+              </button>
+              <button
+                onClick={() => setDetailModalOpen(false)}
+                className="px-6 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 rounded-lg transition-all"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

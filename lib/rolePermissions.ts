@@ -59,11 +59,11 @@ export const rolePermissions: Record<UserRole, Permission> = {
     canManageSecurityData: false,
     canManageResidents: false,
     canManageAnnouncements: false,
-    canManageFeedback: true,
+    canManageFeedback: true, // Can delete own feedback
     canViewResidents: false,
     canViewSchedule: true,
     canViewAnnouncements: true,
-    canViewFeedback: true, // Only own feedback
+    canViewFeedback: true, // Can view all feedback from their RT
     canSubmitFeedback: true,
     canManageSchedule: false,
   },

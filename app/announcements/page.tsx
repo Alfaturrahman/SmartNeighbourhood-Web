@@ -23,13 +23,11 @@ export default function AnnouncementsPage() {
   const [formData, setFormData] = useState<{
     title: string;
     content: string;
-    author: string;
     priority: 'high' | 'medium' | 'low';
     rt_id?: number;
   }>({
     title: '',
     content: '',
-    author: '',
     priority: 'medium',
   });
   const router = useRouter();
@@ -92,6 +90,33 @@ export default function AnnouncementsPage() {
     }
   };
 
+  const getRoleLabel = (role?: string) => {
+    switch (role) {
+      case 'rw': return 'RW';
+      case 'rt': return 'RT';
+      case 'warga': return 'WARGA';
+      default: return role || 'Unknown';
+    }
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const dateOptions: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    const timeOptions: Intl.DateTimeFormatOptions = { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    };
+    return {
+      date: date.toLocaleDateString('id-ID', dateOptions),
+      time: date.toLocaleTimeString('id-ID', timeOptions)
+    };
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -130,7 +155,7 @@ export default function AnnouncementsPage() {
       return;
     }
     setEditingId(null);
-    const newFormData: any = { title: '', content: '', author: user?.name || '', priority: 'medium' };
+    const newFormData: any = { title: '', content: '', priority: 'medium' };
     if (userRole === 'rw' && rts.length > 0) {
       newFormData.rt_id = rts[0].id;
     }
@@ -144,11 +169,15 @@ export default function AnnouncementsPage() {
       showErrorAlert('Akses Ditolak', 'Anda tidak dapat mengedit pengumuman');
       return;
     }
+    // Check if user is the creator
+    if (announcement.author !== user?.name) {
+      showErrorAlert('Akses Ditolak', 'Anda hanya dapat mengedit pengumuman yang Anda buat');
+      return;
+    }
     setEditingId(announcement.id);
     setFormData({
       title: announcement.title,
       content: announcement.content,
-      author: announcement.author || user?.name || '',
       priority: announcement.priority,
     });
     setModalOpen(true);
@@ -229,37 +258,65 @@ export default function AnnouncementsPage() {
 
       {/* Announcements List */}
       <div className="space-y-4">
-        {announcements.map((ann) => (
-          <div key={ann.id} className={`rounded-xl border-l-4 shadow-sm hover:shadow-md transition-shadow p-6 border ${getPriorityBorderColor(ann.priority)} ${getPriorityColor(ann.priority)}`}>
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-start gap-4 flex-1">
+        {announcements.map((ann) => {
+          const dateTime = formatDateTime(ann.created_at || ann.date);
+          return (
+          <div key={ann.id} className={`rounded-xl border-l-4 shadow-sm hover:shadow-md transition-shadow p-4 md:p-6 border ${getPriorityBorderColor(ann.priority)} ${getPriorityColor(ann.priority)}`}>
+            <div className="flex flex-col sm:flex-row items-start justify-between mb-3 gap-3">
+              <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
                 <span className="text-2xl">{getPriorityIcon(ann.priority)}</span>
-                <div>
-                  <h3 className="text-lg font-semibold text-[#003366]">{ann.title}</h3>
-                  <div className="flex items-center gap-3 mt-1">
-                    <p className="text-sm text-gray-600">📝 {ann.rt_name}</p>
-                    <span className="text-gray-300">•</span>
-                    <p className="text-sm text-gray-600">📅 {ann.date}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-semibold text-[#003366] break-words">{ann.title}</h3>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <p className="text-xs sm:text-sm font-medium text-[#003366]">
+                      📝 {ann.author || 'Admin'}
+                    </p>
+                    {ann.user_role && (
+                      <span className="text-xs px-2 py-0.5 bg-[#003366] text-white rounded-full">
+                        {getRoleLabel(ann.user_role)}
+                      </span>
+                    )}
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    📅 {dateTime.date} • 🕐 {dateTime.time} WIB
+                  </p>
                 </div>
               </div>
+              {ann.priority && (
+                <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap self-start ${
+                  ann.priority === 'high' 
+                    ? 'bg-red-100 text-red-700' 
+                    : ann.priority === 'medium'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-green-100 text-green-700'
+                }`}>
+                  {ann.priority === 'high' ? '🔴 Penting' : ann.priority === 'medium' ? '🟡 Normal' : '🟢 Rendah'}
+                </span>
+              )}
             </div>
             
-            <p className="text-gray-700 mb-4 leading-relaxed ml-10">{ann.content}</p>
+            <p className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed ml-0 sm:ml-10 break-words">
+              {ann.content.length > 150 ? ann.content.substring(0, 150) + '...' : ann.content}
+            </p>
             
-            <div className="flex gap-2 pt-4 border-t border-gray-300/50 ml-10">
-              <button onClick={() => openDetailModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">📖 Baca Selengkapnya</button>
-              {isMounted && userRole !== 'warga' && (
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-300/50 ml-0 sm:ml-10">
+              {ann.content.length > 150 && (
                 <>
+                  <button onClick={() => openDetailModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-xs sm:text-sm transition-colors">📖 Baca Selengkapnya</button>
                   <span className="text-gray-300">•</span>
-                  <button onClick={() => openEditModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">✏️ Edit</button>
+                </>
+              )}
+              {isMounted && userRole !== 'warga' && ann.author === user?.name && (
+                <>
+                  <button onClick={() => openEditModal(ann)} className="text-[#003366] hover:text-[#004d80] font-medium text-xs sm:text-sm transition-colors">✏️ Edit</button>
                   <span className="text-gray-300">•</span>
-                  <button onClick={() => handleDelete(ann)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-sm transition-colors">🗑️ Hapus</button>
+                  <button onClick={() => handleDelete(ann)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-xs sm:text-sm transition-colors">🗑️ Hapus</button>
                 </>
               )}
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Modal Form */}
@@ -280,21 +337,6 @@ export default function AnnouncementsPage() {
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Contoh: Pengumuman Pemeliharaan Jalan"
               required
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-            />
-          </div>
-
-          <div>
-            {/* <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Nama Pembuat *
-            </label> */}
-            <input
-              type="hidden"
-              value={formData.author}
-              onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              placeholder="Nama Anda"
-              required
-              disabled
               className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
             />
           </div>
@@ -391,18 +433,42 @@ export default function AnnouncementsPage() {
       >
         {selectedAnnouncement && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">{getPriorityIcon(selectedAnnouncement.priority)}</span>
-              <div>
-                <p className="text-sm text-gray-600">📝 {selectedAnnouncement.author}</p>
-                <p className="text-sm text-gray-600">📅 {selectedAnnouncement.date}</p>
+            <div className="flex flex-col sm:flex-row items-start gap-3 p-4 bg-gray-50 rounded-lg">
+              <span className="text-3xl sm:text-4xl">{getPriorityIcon(selectedAnnouncement.priority)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <p className="text-sm sm:text-base font-semibold text-[#003366]">
+                    📝 {selectedAnnouncement.author || 'Admin'}
+                  </p>
+                  {selectedAnnouncement.user_role && (
+                    <span className="text-xs px-2 py-1 bg-[#003366] text-white rounded-full">
+                      {selectedAnnouncement.user_role === 'rw' ? 'RW' : selectedAnnouncement.user_role === 'rt' ? 'RT' : 'WARGA'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                  🏘️ {selectedAnnouncement.rt_name || 'RT'}
+                </p>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  📅 {new Date(selectedAnnouncement.created_at || selectedAnnouncement.date).toLocaleDateString('id-ID', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric',
+                  })} • 🕐 {new Date(selectedAnnouncement.created_at || selectedAnnouncement.date).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  })} WIB
+                </p>
               </div>
             </div>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedAnnouncement.content}</p>
+            <div className="px-1">
+              <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap break-words">{selectedAnnouncement.content}</p>
+            </div>
             <div className="pt-4 border-t border-gray-200">
               <button
                 onClick={() => setDetailModalOpen(false)}
-                className="w-full px-4 py-2 bg-[#003366] hover:bg-[#004d80] text-white font-semibold rounded-lg transition-all"
+                className="w-full px-4 py-2.5 sm:py-3 bg-[#003366] hover:bg-[#004d80] text-white font-semibold rounded-lg transition-all text-sm sm:text-base"
               >
                 Tutup
               </button>

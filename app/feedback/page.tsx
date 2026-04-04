@@ -17,10 +17,10 @@ export default function FeedbackPage() {
   const [replyText, setReplyText] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('warga');
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    rating: 3,
   });
   const router = useRouter();
 
@@ -30,10 +30,11 @@ export default function FeedbackPage() {
       router.push('/login');
       return;
     }
-    const user = JSON.parse(userData);
-    setUserRole(user.role);
+    const parsedUser = JSON.parse(userData);
+    setUser(parsedUser);
+    setUserRole(parsedUser.role);
     
-    const permissions = getPermissions(user.role);
+    const permissions = getPermissions(parsedUser.role);
     if (!permissions.canViewFeedback && !permissions.canSubmitFeedback) {
       router.push('/dashboard');
       return;
@@ -43,11 +44,31 @@ export default function FeedbackPage() {
     fetchFeedbacks();
   }, [router]);
 
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const dateOptions: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    const timeOptions: Intl.DateTimeFormatOptions = { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    };
+    return {
+      date: date.toLocaleDateString('id-ID', dateOptions),
+      time: date.toLocaleTimeString('id-ID', timeOptions)
+    };
+  };
+
   const fetchFeedbacks = async () => {
     try {
       setIsLoading(true);
       const response = await feedbackService.getAll();
+      console.log('Feedback API Response:', response);
       const data = (response.results || response.data || []) as Feedback[];
+      console.log('Feedback data:', data);
       setFeedbacks(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching feedbacks:', error);
@@ -58,25 +79,13 @@ export default function FeedbackPage() {
     }
   };
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex gap-1">
-        {[...Array(5)].map((_, i) => (
-          <span key={i} className={`text-lg ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`}>
-            ★
-          </span>
-        ))}
-      </div>
-    );
-  };
-
   const openAddModal = () => {
     const permissions = getPermissions(userRole);
     if (!permissions.canSubmitFeedback) {
       showErrorAlert('Akses Ditolak', 'Anda tidak memiliki izin untuk berikan feedback');
       return;
     }
-    setFormData({ title: '', content: '', rating: 3 });
+    setFormData({ title: '', content: '' });
     setModalOpen(true);
   };
 
@@ -85,9 +94,13 @@ export default function FeedbackPage() {
     setIsLoading(true);
 
     try {
-      await feedbackService.create(formData);
+      await feedbackService.create({
+        ...formData,
+        author: user?.name || 'User',
+      } as any);
       await showSuccessAlert('Berhasil!', 'Feedback Anda telah dikirim');
       setModalOpen(false);
+      setFormData({ title: '', content: '' });
       fetchFeedbacks();
     } catch (error: any) {
       console.error('Error submitting feedback:', error);
@@ -104,7 +117,7 @@ export default function FeedbackPage() {
       return;
     }
     setSelectedFeedback(feedback);
-    setReplyText('');
+    setReplyText(feedback.reply || ''); // Pre-fill existing reply for edit mode
     setReplyModalOpen(true);
   };
 
@@ -114,7 +127,10 @@ export default function FeedbackPage() {
 
     try {
       if (selectedFeedback) {
-        await feedbackService.reply(selectedFeedback.id, replyText);
+        console.log('Sending reply to feedback:', selectedFeedback.id);
+        console.log('Reply text:', replyText);
+        console.log('Replied by:', user?.name);
+        await feedbackService.reply(selectedFeedback.id, replyText, user?.name || 'RT');
         await showSuccessAlert('Berhasil!', 'Balasan Anda telah dikirim kepada warga');
         setReplyModalOpen(false);
         setReplyText('');
@@ -122,7 +138,8 @@ export default function FeedbackPage() {
       }
     } catch (error: any) {
       console.error('Error replying to feedback:', error);
-      await showErrorAlert('Error', error.response?.data?.error || 'Gagal mengirim balasan');
+      console.error('Error response:', error.response);
+      await showErrorAlert('Error', error.response?.data?.error || error.response?.data?.detail || 'Gagal mengirim balasan');
     } finally {
       setIsLoading(false);
     }
@@ -172,54 +189,144 @@ export default function FeedbackPage() {
 
       {/* Feedback List */}
       <div className="space-y-4">
-              {feedbacks.map((fb) => (
+              {feedbacks.map((fb) => {
+                console.log('Rendering feedback:', fb.id, 'Reply:', fb.reply, 'Replied_by:', fb.replied_by);
+                const dateTime = formatDateTime(fb.created_at || fb.date);
+                return (
                 <div key={fb.id} className="bg-white rounded-xl shadow-sm border-l-4 border-l-[#FF9500] border border-gray-200 hover:shadow-md transition-shadow p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-[#003366]">{fb.title}</h3>
-                      <div className="flex items-center gap-3 mt-2">
-                        <p className="text-sm text-gray-600">👤 {fb.author}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-sm font-medium text-[#003366]">👤 {fb.author}</p>
                         <span className="text-gray-300">•</span>
-                        <p className="text-sm text-gray-600">📅 {fb.date}</p>
+                        <p className="text-xs text-gray-500">📅 {dateTime.date} • 🕐 {dateTime.time} WIB</p>
                       </div>
-                    </div>
-                    <div className="flex gap-1">
-                      {renderStars(fb.rating)}
                     </div>
                   </div>
                   
                   <p className="text-gray-700 mb-4 leading-relaxed">{fb.content}</p>
                   
+                  {/* Reply Section */}
+                  {fb.reply && (
+                    <div className={`mt-4 border-l-4 p-4 rounded-r-lg ${
+                      fb.replied_by?.includes('RW') ? 'bg-blue-50 border-blue-500' : 'bg-green-50 border-green-500'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`font-medium text-sm ${
+                          fb.replied_by?.includes('RW') ? 'text-blue-900' : 'text-green-900'
+                        }`}>
+                          💬 Balasan dari {fb.replied_by || 'RT'}
+                        </span>
+                        {fb.replied_at && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span className={`text-xs ${
+                              fb.replied_by?.includes('RW') ? 'text-blue-600' : 'text-green-600'
+                            }`}>
+                              {new Date(fb.replied_at).toLocaleDateString('id-ID', { 
+                                day: 'numeric', 
+                                month: 'long', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <p className={`text-sm ${
+                        fb.replied_by?.includes('RW') ? 'text-blue-800' : 'text-green-800'
+                      }`}>{fb.reply}</p>
+                    </div>
+                  )}
+                  
                   <div className="flex gap-2 pt-4 border-t border-gray-100">
-                    {isMounted && userRole !== 'warga' ? (
+                    {isMounted && (
                       <>
-                        <button onClick={() => openReplyModal(fb)} className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors">💬 Balas</button>
-                        <span className="text-gray-300">•</span>
-                        <button onClick={() => handleDelete(fb)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-sm transition-colors">🗑️ Hapus</button>
+                        {/* RT and RW can reply to feedback */}
+                        {userRole !== 'warga' && (
+                          <>
+                            {/* Hierarchy: No reply → RT/RW can reply; RT replied → RT edit or RW override; RW replied → RW edit only */}
+                            {(() => {
+                              // No reply yet - both RT and RW can reply
+                              if (!fb.reply) return (
+                                <>
+                                  <button 
+                                    onClick={() => openReplyModal(fb)} 
+                                    className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors"
+                                  >
+                                    💬 Balas
+                                  </button>
+                                  <span className="text-gray-300">•</span>
+                                </>
+                              );
+                              
+                              // User is the one who replied - can edit their own reply
+                              if (fb.replied_by === user?.name) return (
+                                <>
+                                  <button 
+                                    onClick={() => openReplyModal(fb)} 
+                                    className="text-[#003366] hover:text-[#004d80] font-medium text-sm transition-colors"
+                                  >
+                                    ✏️ Edit Balasan
+                                  </button>
+                                  <span className="text-gray-300">•</span>
+                                </>
+                              );
+                              
+                              // RT replied and user is RW - RW can override (higher authority)
+                              if (fb.replied_by?.includes('RT') && user?.role === 'rw') return (
+                                <>
+                                  <button 
+                                    onClick={() => openReplyModal(fb)} 
+                                    className="text-purple-600 hover:text-purple-700 font-medium text-sm transition-colors"
+                                  >
+                                    🔄 Override Balasan RT
+                                  </button>
+                                  <span className="text-gray-300">•</span>
+                                </>
+                              );
+                              
+                              // RW replied - RT cannot override (RW is final authority)
+                              if (fb.replied_by?.includes('RW')) return (
+                                <>
+                                  <span className="text-blue-600 text-xs font-medium">✓ Sudah direspon oleh RW</span>
+                                  <span className="text-gray-300">•</span>
+                                </>
+                              );
+                              
+                              // Default: already replied by someone else
+                              return (
+                                <>
+                                  <span className="text-gray-400 text-xs">Sudah dibalas oleh {fb.replied_by}</span>
+                                  <span className="text-gray-300">•</span>
+                                </>
+                              );
+                            })()}
+                          </>
+                        )}
+                        
+                        {/* Everyone can delete their own feedback */}
+                        {fb.author === user?.name && (
+                          <button onClick={() => handleDelete(fb)} className="text-[#EF4444] hover:text-[#DC2626] font-medium text-sm transition-colors">🗑️ Hapus</button>
+                        )}
                       </>
-                    ) : (
-                      <span className="text-gray-400 text-xs">Hanya lihat</span>
                     )}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
 
       {/* Reply Modal */}
       <Modal
         isOpen={replyModalOpen}
-        title="Balas Feedback"
+        title={selectedFeedback?.reply ? "Edit Balasan Feedback" : "Balas Feedback"}
         onClose={() => !isLoading && setReplyModalOpen(false)}
         size="md"
       >
         <form onSubmit={handleReplySubmit} className="space-y-4">
-          {selectedFeedback && (
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
-              <p className="text-sm text-gray-700"><span className="font-semibold">Feedback dari:</span> {selectedFeedback.author}</p>
-              <p className="text-sm text-gray-600 mt-2">{selectedFeedback.content}</p>
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Balasan *

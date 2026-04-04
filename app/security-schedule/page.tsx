@@ -29,6 +29,20 @@ export default function SecuritySchedulePage() {
   });
   const router = useRouter();
 
+  // Helper function to get time based on shift
+  const getTimeByShift = (shift: 'Pagi' | 'Siang' | 'Malam'): string => {
+    switch (shift) {
+      case 'Pagi':
+        return '08:00 - 16:00';
+      case 'Siang':
+        return '16:00 - 24:00';
+      case 'Malam':
+        return '00:00 - 08:00';
+      default:
+        return '08:00 - 16:00';
+    }
+  };
+
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (!userData) {
@@ -95,13 +109,13 @@ export default function SecuritySchedulePage() {
     setFormData({ 
       name: '', 
       shift: 'Pagi', 
-      schedule_type: 'daily',
+      schedule_type: 'weekly', // Always weekly
       date: '', 
       start_date: '',
       end_date: '',
       weekday: 0,
       month_day: 1,
-      time: '06:00 - 12:00', 
+      time: getTimeByShift('Pagi'), // Auto-set based on shift
       status: 'aktif' 
     });
     setModalOpen(true);
@@ -112,13 +126,13 @@ export default function SecuritySchedulePage() {
     setFormData({
       name: schedule.name,
       shift: schedule.shift,
-      schedule_type: schedule.schedule_type || 'daily',
+      schedule_type: 'weekly', // Always weekly
       date: schedule.date || '',
       start_date: schedule.start_date || '',
       end_date: schedule.end_date || '',
       weekday: schedule.weekday ?? 0,
       month_day: schedule.month_day ?? 1,
-      time: schedule.time,
+      time: schedule.time || '00:00 - 23:59',
       status: schedule.status,
     });
     setModalOpen(true);
@@ -135,18 +149,33 @@ export default function SecuritySchedulePage() {
     setIsLoading(true);
 
     try {
+      // Clean payload - only send required fields for weekly schedule
+      const payload = {
+        name: formData.name,
+        shift: formData.shift,
+        schedule_type: 'weekly',
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        time: formData.time,
+        status: formData.status,
+        // No weekday field - weekly schedule is just date range
+      };
+      
+      console.log('📤 Form data being sent:', payload);
+      
       if (editingId) {
-        await securityScheduleService.update(editingId, formData);
+        await securityScheduleService.update(editingId, payload);
         await showSuccessAlert('Berhasil!', 'Jadwal keamanan berhasil diperbarui');
       } else {
-        await securityScheduleService.create(formData);
+        await securityScheduleService.create(payload);
         await showSuccessAlert('Berhasil!', 'Jadwal keamanan baru berhasil ditambahkan');
       }
       setModalOpen(false);
       fetchSchedules();
     } catch (error: any) {
       console.error('Error saving schedule:', error);
-      await showErrorAlert('Error', error.response?.data?.error || 'Gagal menyimpan jadwal keamanan');
+      console.error('Error details:', error.response?.data);
+      await showErrorAlert('Error', error.response?.data?.error || error.response?.data?.detail || 'Gagal menyimpan jadwal keamanan');
     } finally {
       setIsLoading(false);
     }
@@ -194,6 +223,73 @@ export default function SecuritySchedulePage() {
         )}
       </div>
 
+      {/* Today's Guard Schedule */}
+      <div className="mb-8">
+        <h3 className="text-xl font-bold text-[#003366] mb-4">
+          Jadwal Jaga Hari Ini
+          <span className="text-sm font-normal text-gray-600 ml-2">
+            ({new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })})
+          </span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {['Pagi', 'Siang', 'Malam'].map((shift) => {
+            const todaySchedules = schedules.filter(s => {
+              const today = new Date();
+              const startDate = new Date(s.start_date);
+              const endDate = new Date(s.end_date);
+              return s.shift === shift && s.status === 'aktif' && today >= startDate && today <= endDate;
+            });
+
+            return (
+              <div 
+                key={shift} 
+                className={`rounded-xl border-2 p-6 hover:shadow-lg transition-all ${
+                  shift === 'Pagi' ? 'border-yellow-300 bg-yellow-50' : 
+                  shift === 'Siang' ? 'border-orange-300 bg-orange-50' : 
+                  'border-blue-300 bg-blue-50'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">
+                    {shift === 'Pagi' ? '☀️' : shift === 'Siang' ? '🌆' : '🌙'}
+                  </span>
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900">Shift {shift}</h4>
+                    <p className="text-xs text-gray-600">{getTimeByShift(shift as any)}</p>
+                  </div>
+                </div>
+                {todaySchedules.length > 0 ? (
+                  <div className="space-y-3">
+                    {todaySchedules.map((schedule) => (
+                      <div key={schedule.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-[#003366] rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                            {schedule.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 break-words">{schedule.name}</p>
+                            <p className="text-sm text-gray-600 break-all flex items-center gap-1 mt-1">
+                              <span>📞</span> {schedule.personnel_phone || 'Tidak tersedia'}
+                            </p>
+                            <p className="text-sm text-gray-600 break-all flex items-center gap-1">
+                              <span>✉️</span> {schedule.personnel_email || 'Tidak tersedia'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <p className="text-sm">Belum ada petugas terjadwal</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Schedule Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="border-t-4 border-[#66CC66]"></div>
@@ -203,8 +299,8 @@ export default function SecuritySchedulePage() {
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Nama Petugas</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Shift</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Jenis Jadwal</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Rincian</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Tanggal Mulai</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Tanggal Berakhir</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Jam</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-[#003366]">Aksi</th>
@@ -212,24 +308,6 @@ export default function SecuritySchedulePage() {
             </thead>
             <tbody>
               {schedules.map((schedule) => {
-                let scheduleLabel = '';
-                if (schedule.schedule_type === 'weekly' && schedule.weekday !== undefined) {
-                  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-                  if (schedule.start_date && schedule.end_date) {
-                    scheduleLabel = `Setiap ${days[schedule.weekday]} (${new Date(schedule.start_date).toLocaleDateString('id-ID')} - ${new Date(schedule.end_date).toLocaleDateString('id-ID')})`;
-                  } else {
-                    scheduleLabel = `Setiap ${days[schedule.weekday]}`;
-                  }
-                } else if (schedule.schedule_type === 'monthly' && schedule.month_day) {
-                  if (schedule.start_date && schedule.end_date) {
-                    scheduleLabel = `Tanggal ${schedule.month_day} (${new Date(schedule.start_date).toLocaleDateString('id-ID')} - ${new Date(schedule.end_date).toLocaleDateString('id-ID')})`;
-                  } else {
-                    scheduleLabel = `Tanggal ${schedule.month_day} tiap bulan`;
-                  }
-                } else {
-                  scheduleLabel = schedule.date || 'N/A';
-                }
-                
                 return (
                 <tr key={schedule.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
                   <td className="px-6 py-4 font-medium text-gray-900">{schedule.name}</td>
@@ -238,14 +316,12 @@ export default function SecuritySchedulePage() {
                       {schedule.shift}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                      {schedule.schedule_type === 'daily' && '📅 Harian'}
-                      {schedule.schedule_type === 'weekly' && '📆 Mingguan'}
-                      {schedule.schedule_type === 'monthly' && '📊 Bulanan'}
-                    </span>
+                  <td className="px-6 py-4 text-gray-600 text-sm">
+                    {schedule.start_date ? new Date(schedule.start_date).toLocaleDateString('id-ID') : '-'}
                   </td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">{scheduleLabel}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm">
+                    {schedule.end_date ? new Date(schedule.end_date).toLocaleDateString('id-ID') : '-'}
+                  </td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-medium">{schedule.time}</td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -279,6 +355,9 @@ export default function SecuritySchedulePage() {
         size="lg"
       >
         <form onSubmit={handleSubmitForm} className="space-y-4">
+          {/* Hidden field untuk schedule_type */}
+          <input type="hidden" value="weekly" />
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -320,7 +399,14 @@ export default function SecuritySchedulePage() {
               </label>
               <select
                 value={formData.shift}
-                onChange={(e) => setFormData({ ...formData, shift: e.target.value as 'Pagi' | 'Siang' | 'Malam' })}
+                onChange={(e) => {
+                  const newShift = e.target.value as 'Pagi' | 'Siang' | 'Malam';
+                  setFormData({ 
+                    ...formData, 
+                    shift: newShift,
+                    time: getTimeByShift(newShift) // Auto-update time based on shift
+                  });
+                }}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
               >
                 <option value="Pagi">🌅 Pagi</option>
@@ -331,20 +417,31 @@ export default function SecuritySchedulePage() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Tipe Jadwal *
+                Tanggal Mulai *
               </label>
-              <select
-                value={formData.schedule_type}
-                onChange={(e) => setFormData({ ...formData, schedule_type: e.target.value as 'daily' | 'weekly' | 'monthly' })}
+              <input
+                type="date"
+                value={formData.start_date || ''}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value, schedule_type: 'weekly' })}
+                required
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-              >
-                <option value="daily">📅 Harian</option>
-                <option value="weekly">📆 Mingguan</option>
-                <option value="monthly">📊 Bulanan</option>
-              </select>
+              />
             </div>
 
             <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Tanggal Berakhir *
+              </label>
+              <input
+                type="date"
+                value={formData.end_date || ''}
+                onChange={(e) => setFormData({ ...formData, end_date: e.target.value, schedule_type: 'weekly' })}
+                required
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
+              />
+            </div>
+
+            <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-900 mb-2">
                 Status
               </label>
@@ -357,128 +454,6 @@ export default function SecuritySchedulePage() {
                 <option value="tidak aktif">✕ Tidak Aktif</option>
               </select>
             </div>
-          </div>
-
-          {formData.schedule_type === 'daily' && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Tanggal *
-              </label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                required
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-              />
-            </div>
-          )}
-
-          {formData.schedule_type === 'weekly' && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Tanggal Mulai *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.start_date || ''}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Tanggal Berakhir *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.end_date || ''}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Hari *
-                </label>
-                <select
-                  value={formData.weekday ?? 0}
-                  onChange={(e) => setFormData({ ...formData, weekday: parseInt(e.target.value) })}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-                >
-                  <option value={0}>Senin</option>
-                  <option value={1}>Selasa</option>
-                  <option value={2}>Rabu</option>
-                  <option value={3}>Kamis</option>
-                  <option value={4}>Jumat</option>
-                  <option value={5}>Sabtu</option>
-                  <option value={6}>Minggu</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          {formData.schedule_type === 'monthly' && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Tanggal Mulai *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.start_date || ''}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Tanggal Berakhir *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.end_date || ''}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Tanggal Bulan (1-31) *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={formData.month_day ?? 1}
-                  onChange={(e) => setFormData({ ...formData, month_day: Math.min(31, Math.max(1, parseInt(e.target.value) || 1)) })}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-                />
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Jam Dinas *
-            </label>
-            <input
-              type="text"
-              value={formData.time}
-              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-              placeholder="Contoh: 06:00 - 12:00"
-              required
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#003366] focus:border-transparent bg-gray-50 focus:bg-white transition-all"
-            />
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-gray-200">

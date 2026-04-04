@@ -6,6 +6,10 @@ export interface WargaCreateData {
   phone?: string;
   address?: string;
   status: 'aktif' | 'tidak aktif';
+  ktp?: string;
+  kk?: string;
+  jumlah_keluarga?: number;
+  kepala_keluarga?: string;
 }
 
 export interface Warga {
@@ -15,6 +19,10 @@ export interface Warga {
   phone: string;
   address: string;
   status: 'aktif' | 'tidak aktif';
+  ktp?: string;
+  kk?: string;
+  jumlah_keluarga?: number;
+  kepala_keluarga?: string;
   user: number;
   user_email: string;
   rt: number;

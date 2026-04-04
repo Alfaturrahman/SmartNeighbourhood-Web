@@ -36,8 +36,18 @@ export const feedbackService = {
   /**
    * Reply to feedback
    */
-  async reply(id: number, reply: string): Promise<ApiResponse<Feedback>> {
-    return postData<ApiResponse<Feedback>>(`/feedbacks/${id}/reply/`, { reply });
+  async reply(id: number, reply: string, replied_by?: string): Promise<ApiResponse<Feedback>> {
+    return postData<ApiResponse<Feedback>>(`/feedbacks/${id}/reply/`, { 
+      reply,
+      replied_by: replied_by || 'Admin'
+    });
+  },
+
+  /**
+   * Respond to feedback (alias for reply)
+   */
+  async respond(id: number, response: string, responded_by?: string): Promise<ApiResponse<Feedback>> {
+    return this.reply(id, response, responded_by);
   },
 
   /**

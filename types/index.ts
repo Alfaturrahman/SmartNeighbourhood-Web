@@ -35,17 +35,17 @@ export interface Feedback {
   author: string;
   title: string;
   content: string;
-  rating: number;
+  rating?: number;
   date: string;
   reply?: string;
-  repliedAt?: string;
-  repliedBy?: string;
+  replied_at?: string;  // Changed from repliedAt to match API
+  replied_by?: string;  // Changed from repliedBy to match API
 }
 
 export interface FeedbackFormData {
   title: string;
   content: string;
-  rating: number;
+  rating?: number;  // Made optional since we removed rating from form
 }
 
 // Announcement Types
@@ -73,11 +73,17 @@ export interface SecuritySchedule {
   shift: 'Pagi' | 'Siang' | 'Malam';
   schedule_type: 'daily' | 'weekly' | 'monthly';
   date?: string;
+  start_date?: string;
+  end_date?: string;
   weekday?: number;
   month_day?: number;
   time: string;
   status: 'aktif' | 'tidak aktif';
   notes?: string;
+  personnel?: number;
+  personnel_name?: string;
+  personnel_phone?: string;
+  personnel_email?: string;
 }
 
 export interface SecurityScheduleFormData {

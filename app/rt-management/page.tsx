@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/lib/swalUtils';
 import { rtService } from '@/services/modules/rtService';
+import { residentService } from '@/services/modules/residentService';
 import type { RT, RTCreateData } from '@/services/modules/rtService';
 
 export default function RTManagementPage() {
   const [rts, setRts] = useState<RT[]>([]);
+  const [totalWarga, setTotalWarga] = useState<number>(0);
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,6 +42,7 @@ export default function RTManagementPage() {
     
     setUser(parsedUser);
     fetchRTs();
+    fetchTotalWarga();
   }, [router]);
 
   const fetchRTs = async () => {
@@ -54,6 +57,17 @@ export default function RTManagementPage() {
       setRts([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchTotalWarga = async () => {
+    try {
+      const response = await residentService.getAll();
+      const data = (response.results || response.data || []) as any[];
+      setTotalWarga(Array.isArray(data) ? data.length : 0);
+    } catch (error: any) {
+      console.error('Error fetching total warga:', error);
+      setTotalWarga(0);
     }
   };
 
@@ -94,13 +108,13 @@ export default function RTManagementPage() {
       } else {
         // Create new RT
         const response = await rtService.create(formData);
-        const generatedPass = response.data?.generated_password || '';
+        const generatedPass = response.data?.generated_password || 'passw0rd';
         setGeneratedPassword(generatedPass);
         
         // Show password modal
         await showSuccessAlert(
           'RT Berhasil Dibuat',
-          `Email: ${response.data?.user_email}\nPassword: ${generatedPass}\n\nBagikan kredensial ini ke RT untuk login.`
+          `Email: ${response.data?.user_email}\nPassword: ${generatedPass}\n\nPassword default untuk semua akun baru adalah: passw0rd\nBagikan kredensial ini ke RT untuk login.`
         );
       }
 
@@ -139,7 +153,8 @@ export default function RTManagementPage() {
   const handleResetRTPassword = async (id: number, name: string) => {
     const result = await showConfirmAlert(
       'Reset Password RT',
-      `Apakah Anda yakin ingin mereset password RT "${name}"?`
+      `Apakah Anda yakin ingin mereset password RT "${name}"?`,
+      'Ya, Reset'
     );
 
     if (!result.isConfirmed) return;
@@ -147,11 +162,13 @@ export default function RTManagementPage() {
     try {
       setIsLoading(true);
       const response = await rtService.resetPassword(id);
-      const newPassword = response.data?.data?.new_password || response.data?.new_password || '';
+      console.log('Reset RT Password Response:', response);
+      const newPassword = response.data?.data?.new_password || response.data?.new_password || 'passw0rd';
+      const userEmail = response.data?.data?.user_email || response.data?.user_email || 'Email tidak ditemukan';
       setGeneratedPassword(newPassword);
       await showSuccessAlert(
         'Password RT Direset',
-        `Email: ${response.data?.data?.user_email}\nPassword Baru: ${newPassword}\n\nBagikan password ini ke RT.`
+        `Email: ${userEmail}\nPassword Baru: ${newPassword}\n\nPassword telah direset ke default: passw0rd\nBagikan password ini ke RT.`
       );
     } catch (error: any) {
       console.error('Error:', error);
@@ -212,10 +229,10 @@ export default function RTManagementPage() {
           <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-1"></div>
           <div className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-2xl md:text-3xl">📊</span>
+              <span className="text-2xl md:text-3xl">�</span>
               <p className="text-xs md:text-sm text-gray-600">Total Warga</p>
             </div>
-            <p className="text-3xl md:text-4xl font-bold text-gray-900">-</p>
+            <p className="text-3xl md:text-4xl font-bold text-gray-900">{totalWarga}</p>
           </div>
         </div>
       </div>
@@ -267,6 +284,13 @@ export default function RTManagementPage() {
                     <td className="px-3 md:px-6 py-3 md:py-4 text-gray-600 text-sm hidden md:table-cell">{rt.phone || '-'}</td>
                     <td className="px-3 md:px-6 py-3 md:py-4 text-gray-600 text-sm">{rt.area || '-'}</td>
                     <td className="px-3 md:px-6 py-3 md:py-4 text-sm space-x-2 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => router.push(`/rt-management/${rt.id}`)}
+                        className="text-[#003366] hover:text-[#004d80] font-medium text-xs transition-colors whitespace-nowrap"
+                      >
+                        📋 Detail
+                      </button>
+                      <span className="text-gray-300">•</span>
                       <button
                         onClick={() => {
                           setEditingId(rt.id);
