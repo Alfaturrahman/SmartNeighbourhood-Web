@@ -444,9 +444,9 @@ export default function WargaManagementPage() {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editingId ? 'Edit Warga' : 'Tambah Warga Baru'}
+        maxWidth="2xl"
       >
-        <form onSubmit={handleSubmitForm} className="space-y-4">
-          <div>
+        <form onSubmit={handleSubmitForm} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">\n          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Nama Warga *</label>
             <input
               type="text"

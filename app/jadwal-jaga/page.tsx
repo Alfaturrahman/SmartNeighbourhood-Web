@@ -170,11 +170,19 @@ export default function JadwalJagaPage() {
       <div className="mt-8 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
         <div className="flex items-start gap-3">
           <span className="text-2xl">🚨</span>
-          <div>
-            <p className="text-sm text-red-900 font-bold">Kontak Darurat</p>
-            <p className="text-xs text-red-700 mt-1">
-              Untuk situasi darurat, segera hubungi petugas yang berjaga atau hubungi nomor darurat: <span className="font-bold">112</span>
-            </p>
+          <div className="flex-1">
+            <p className="text-sm text-red-900 font-bold mb-2">Kontak Darurat</p>
+            <div className="space-y-2 text-xs text-red-700">
+              <p>
+                • Petugas Keamanan: Hubungi nomor yang tertera di atas
+              </p>
+              <p>
+                • RT/RW: Hubungi ketua RT atau RW setempat
+              </p>
+              <p>
+                • <span className="font-bold">Darurat (Polisi/Ambulans/Pemadam): 112</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>

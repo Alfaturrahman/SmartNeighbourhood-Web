@@ -10,6 +10,8 @@ import type { RT, RTCreateData } from '@/services/modules/rtService';
 
 export default function RTManagementPage() {
   const [rts, setRts] = useState<RT[]>([]);
+  const [filteredRts, setFilteredRts] = useState<RT[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [totalWarga, setTotalWarga] = useState<number>(0);
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,13 +53,30 @@ export default function RTManagementPage() {
       const response = await rtService.getAll();
       const data = (response.results || response.data || []) as RT[];
       setRts(Array.isArray(data) ? data : []);
+      setFilteredRts(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching RTs:', error);
       await showErrorAlert('Error', 'Gagal memuat data RT');
       setRts([]);
+      setFilteredRts([]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    if (!value.trim()) {
+      setFilteredRts(rts);
+      return;
+    }
+    
+    const filtered = rts.filter((rt) =>
+      rt.name.toLowerCase().includes(value.toLowerCase()) ||
+      rt.user_email.toLowerCase().includes(value.toLowerCase()) ||
+      (rt.area && rt.area.toLowerCase().includes(value.toLowerCase()))
+    );
+    setFilteredRts(filtered);
   };
 
   const fetchTotalWarga = async () => {
@@ -242,7 +261,9 @@ export default function RTManagementPage() {
         <input
           type="text"
           placeholder="Cari nama, email, atau area..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366]"
+          value={searchTerm}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:outline-none"
         />
       </div>
 
@@ -256,25 +277,24 @@ export default function RTManagementPage() {
                 <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366]">Nama</th>
                 <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366] hidden md:table-cell">Email</th>
                 <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366] hidden md:table-cell">Telepon</th>
-                <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366]">Area</th>
                 <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-[#003366]">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-3 md:px-6 py-3 md:py-4 text-center text-gray-500">
+                  <td colSpan={4} className="px-3 md:px-6 py-3 md:py-4 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
-              ) : rts.length === 0 ? (
+              ) : filteredRts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 md:px-6 py-3 md:py-4 text-center text-gray-500">
-                    Belum ada data RT
+                  <td colSpan={4} className="px-3 md:px-6 py-3 md:py-4 text-center text-gray-500">
+                    {searchTerm ? 'Tidak ada data yang sesuai dengan pencarian' : 'Belum ada data RT'}
                   </td>
                 </tr>
               ) : (
-                rts.map((rt) => (
+                filteredRts.map((rt) => (
                   <tr key={rt.id} className="border-b border-gray-100 hover:bg-[#F0F8FF] transition-colors">
                     <td className="px-3 md:px-6 py-3 md:py-4">
                       <p className="font-medium text-gray-900 text-sm md:text-base">{rt.name}</p>
@@ -282,7 +302,6 @@ export default function RTManagementPage() {
                     </td>
                     <td className="px-3 md:px-6 py-3 md:py-4 text-gray-600 text-sm hidden md:table-cell">{rt.user_email}</td>
                     <td className="px-3 md:px-6 py-3 md:py-4 text-gray-600 text-sm hidden md:table-cell">{rt.phone || '-'}</td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 text-gray-600 text-sm">{rt.area || '-'}</td>
                     <td className="px-3 md:px-6 py-3 md:py-4 text-sm space-x-2 flex flex-wrap gap-2">
                       <button
                         onClick={() => router.push(`/rt-management/${rt.id}`)}
@@ -343,7 +362,6 @@ export default function RTManagementPage() {
               placeholder="Masukkan nama RT"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:border-transparent"
               required
-              disabled={editingId !== null}
             />
           </div>
 
@@ -370,18 +388,6 @@ export default function RTManagementPage() {
               value={formData.phone || ''}
               onChange={handleInputChange}
               placeholder="Nomor telepon RT"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Area</label>
-            <input
-              type="text"
-              name="area"
-              value={formData.area || ''}
-              onChange={handleInputChange}
-              placeholder="Area RT"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003366] focus:border-transparent"
             />
           </div>

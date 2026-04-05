@@ -20,8 +20,8 @@ const MENU_ITEMS: MenuItem[] = [
   { href: '/security-personnel', label: 'Master Keamanan', icon: '🛟', roles: ['rw'] },
   { href: '/security-schedule', label: 'Jadwal Keamanan', icon: '🔐', roles: ['rw'] },
   { href: '/jadwal-jaga', label: 'Jadwal Jaga Hari Ini', icon: '🛡️', roles: ['rt', 'warga'] },
-  { href: '/feedback', label: 'Feedback', icon: '💬', roles: ['rt', 'warga'] },
-  { href: '/announcements', label: 'Pengumuman', icon: '📢', roles: ['rt', 'warga'] },
+  { href: '/feedback', label: 'Feedback', icon: '💬', roles: ['rw', 'rt', 'warga'] },
+  { href: '/announcements', label: 'Pengumuman', icon: '📢', roles: ['rw', 'rt', 'warga'] },
 ];
 
 export default function Sidebar({ onClose }: SidebarProps) {
