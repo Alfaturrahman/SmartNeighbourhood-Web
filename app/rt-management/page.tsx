@@ -121,8 +121,13 @@ export default function RTManagementPage() {
 
     try {
       if (editingId) {
-        // Update existing RT
-        await rtService.update(editingId, formData);
+        // Update existing RT - only send updatable fields
+        const updatePayload = {
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+        };
+        await rtService.update(editingId, updatePayload);
         await showSuccessAlert('Berhasil', 'Data RT berhasil diperbarui');
       } else {
         // Create new RT
