@@ -61,7 +61,7 @@ export default function Home() {
           <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 text-center">
             <h2 className="text-2xl font-bold text-white mb-3">Siap Mulai?</h2>
             <p className="text-gray-300 mb-6">
-              Demo mode aktif - gunakan email dan password apapun untuk login
+              Kelola komunitas perumahan Anda dengan efisien dan profesional
             </p>
             <Link
               href="/login"
@@ -74,7 +74,7 @@ export default function Home() {
           {/* Footer Note */}
           <div className="text-center mt-12">
             <p className="text-gray-400 text-sm">
-              Aplikasi demonstrasi • Semua data adalah dummy data
+              Smart Neighborhood Management System v1.0
             </p>
           </div>
         </div>
