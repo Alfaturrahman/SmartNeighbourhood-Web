@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import IOSInstallPrompt from "@/components/IOSInstallPrompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,13 +50,13 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Smart Neighborhood" />
         <meta name="msapplication-TileColor" content="#003366" />
-        <meta name="msapplication-TileImage" content="/icon-192.png" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <IOSInstallPrompt />
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create PNG Icons - SmartNeighbour</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #003366;
+        }
+        canvas {
+            border: 2px solid #ddd;
+            margin: 20px 0;
+            display: block;
+        }
+        button {
+            background: #003366;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #004488;
+        }
+        .instructions {
+            background: #e8f4fd;
+            padding: 15px;
+            border-left: 4px solid #003366;
+            margin: 20px 0;
+        }
+        .icon-preview {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .preview-item {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Generate PNG Icons untuk iOS PWA</h1>
+        
+        <div class="instructions">
+            <h3>📋 Cara Pakai:</h3>
+            <ol>
+                <li>Klik tombol "Generate Icons" di bawah</li>
+                <li>Canvas akan menunjukkan preview icon</li>
+                <li>Klik tombol download untuk setiap ukuran</li>
+                <li>Save ke folder <code>public/</code> dengan nama yang sesuai</li>
+            </ol>
+        </div>
+
+        <button onclick="generateIcons()">🎨 Generate Icons</button>
+
+        <div id="iconContainer" class="icon-preview"></div>
+    </div>
+
+    <script>
+        function generateIcons() {
+            const sizes = [
+                { size: 192, name: 'icon-192.png', label: '192x192 (REQUIRED)' },
+                { size: 180, name: 'icon-180.png', label: '180x180 (iPhone)' },
+                { size: 152, name: 'icon-152.png', label: '152x152 (iPad)' },
+                { size: 120, name: 'icon-120.png', label: '120x120 (iPhone)' }
+            ];
+
+            const container = document.getElementById('iconContainer');
+            container.innerHTML = '';
+
+            sizes.forEach(({ size, name, label }) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'preview-item';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Background gradient
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#003366');
+                gradient.addColorStop(1, '#0055aa');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+                
+                // Border
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = size * 0.02;
+                ctx.strokeRect(size * 0.05, size * 0.05, size * 0.9, size * 0.9);
+                
+                // House icon (simple)
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                // Roof
+                ctx.moveTo(size * 0.5, size * 0.3);
+                ctx.lineTo(size * 0.25, size * 0.5);
+                ctx.lineTo(size * 0.75, size * 0.5);
+                ctx.closePath();
+                ctx.fill();
+                
+                // House body
+                ctx.fillRect(size * 0.3, size * 0.5, size * 0.4, size * 0.3);
+                
+                // Door
+                ctx.fillStyle = '#003366';
+                ctx.fillRect(size * 0.42, size * 0.6, size * 0.16, size * 0.2);
+                
+                // Text
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `bold ${size * 0.1}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText('SN', size * 0.5, size * 0.92);
+
+                const labelEl = document.createElement('p');
+                labelEl.textContent = label;
+                labelEl.style.marginTop = '10px';
+                labelEl.style.fontWeight = 'bold';
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = `Download ${name}`;
+                downloadBtn.onclick = () => downloadCanvas(canvas, name);
+
+                wrapper.appendChild(canvas);
+                wrapper.appendChild(labelEl);
+                wrapper.appendChild(downloadBtn);
+                container.appendChild(wrapper);
+            });
+        }
+
+        function downloadCanvas(canvas, filename) {
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Auto generate on load
+        window.onload = generateIcons;
+    </script>
+</body>
+</html>
