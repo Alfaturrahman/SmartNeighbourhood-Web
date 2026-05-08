@@ -239,7 +239,7 @@ export default function RTManagementPage() {
             <p className="text-3xl md:text-4xl font-bold text-gray-900">{rts.length}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
+        {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-green-600 h-1"></div>
           <div className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-3">
@@ -248,7 +248,7 @@ export default function RTManagementPage() {
             </div>
             <p className="text-3xl md:text-4xl font-bold text-gray-900">{rts.length}</p>
           </div>
-        </div>
+        </div> */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 overflow-hidden">
           <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-1"></div>
           <div className="p-4 md:p-6">
